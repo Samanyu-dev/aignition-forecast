@@ -4,8 +4,10 @@ AI-assisted causal/anomaly narrative layer. Not part of run.sh's critical path
 used only by the FastAPI/Streamlit demo layer.
 
 Design: never ask the LLM to invent numbers. Pre-compute structured statistics
-(period-over-period deltas, spend elasticity per segment, anomalous campaigns
-by ROAS z-score, and budget-scenario deltas) and ask Claude to interpret them.
+(period-over-period deltas, spend elasticity per segment with bootstrap CIs,
+anomalous campaigns by ROAS z-score, budget-scenario deltas, per-segment
+walk-forward backtest reliability, and a structural zero-revenue-campaign
+check) and ask Claude to interpret them.
 
 If ANTHROPIC_API_KEY is unset, falls back to a deterministic template built
 from the same stats dict, so the app runs fully offline. The template path
@@ -24,6 +26,9 @@ DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
 RECENT_WINDOW_DAYS = 30
 ANOMALY_Z_THRESHOLD = 2.0
 ANOMALY_LOOKBACK_DAYS = 60
+LOW_COVERAGE_THRESHOLD_PCT = 40.0  # walk-forward P10-P90 coverage below this = flag as low-reliability
+HIGH_APE_THRESHOLD_PCT = 150.0  # walk-forward MAPE above this = flag as low-reliability
+ZERO_REVENUE_CAMPAIGN_SHARE_THRESHOLD = 0.25  # fraction of a channel's campaigns with lifetime spend>0, revenue=0
 
 
 def _period_deltas(features: pd.DataFrame, window_days: int = RECENT_WINDOW_DAYS) -> list:
@@ -59,10 +64,62 @@ def _elasticity_summary(model: dict) -> list:
             "channel": channel,
             "campaign_type": campaign_type,
             "elasticity_beta": round(seg["elasticity_beta"], 2),
+            "elasticity_ci": [round(seg.get("elasticity_ci_low", seg["elasticity_beta"]), 2),
+                              round(seg.get("elasticity_ci_high", seg["elasticity_beta"]), 2)],
             "n_obs": seg["elasticity_n_obs"],
-            "low_confidence": seg["elasticity_n_obs"] < 10,
+            "low_confidence": seg.get("elasticity_low_confidence", seg["elasticity_n_obs"] < 10),
+            "used_for_budget_scenarios": not seg.get("elasticity_low_confidence", seg["elasticity_n_obs"] < 10),
         })
     return sorted(out, key=lambda r: r["elasticity_beta"])
+
+
+def _forecast_reliability(model: dict) -> list:
+    """Per-segment walk-forward backtest reliability (see docs/TECHNICAL_DOC.md
+    3.7-3.8) -- lets the narrative say *how much to trust* a forecast, not
+    just what the forecast is."""
+    summary = model.get("backtest_summary", {}).get("per_segment", {})
+    out = []
+    for key, s in summary.items():
+        if s.get("n_scored", 0) == 0:
+            continue
+        out.append({
+            "segment": key,
+            "method": s["method"],
+            "mean_ape_pct": round(s["mean_ape_pct"], 1) if s["mean_ape_pct"] is not None else None,
+            "coverage_pct": round(s["coverage_pct"], 1) if s["coverage_pct"] is not None else None,
+            "low_reliability": (
+                (s["coverage_pct"] is not None and s["coverage_pct"] < LOW_COVERAGE_THRESHOLD_PCT)
+                or (s["mean_ape_pct"] is not None and s["mean_ape_pct"] > HIGH_APE_THRESHOLD_PCT)
+            ),
+        })
+    return sorted(out, key=lambda r: (r["coverage_pct"] if r["coverage_pct"] is not None else 999))
+
+
+def _structural_risk_campaigns(features: pd.DataFrame) -> list:
+    """Flags channels where a large share of campaigns have spent money but
+    generated zero lifetime revenue -- a structural failure (e.g. broken
+    tracking, a dead campaign left running), not routine variance. Computed
+    live from whatever data is loaded, not hardcoded to any one channel."""
+    lifetime = features.groupby(["channel", "campaign_id", "campaign_name"]).agg(
+        revenue=("revenue", "sum"), spend=("spend", "sum")
+    ).reset_index()
+
+    out = []
+    for channel, group in lifetime.groupby("channel"):
+        spending = group[group.spend > 0]
+        if len(spending) == 0:
+            continue
+        zero_rev = spending[spending.revenue == 0]
+        share = len(zero_rev) / len(spending)
+        if share >= ZERO_REVENUE_CAMPAIGN_SHARE_THRESHOLD:
+            out.append({
+                "channel": channel,
+                "zero_revenue_campaigns": int(len(zero_rev)),
+                "total_spending_campaigns": int(len(spending)),
+                "zero_revenue_share_pct": round(share * 100, 1),
+                "wasted_spend": round(float(zero_rev["spend"].sum()), 2),
+            })
+    return out
 
 
 def _anomalous_campaigns(features: pd.DataFrame, z_thresh: float = ANOMALY_Z_THRESHOLD) -> list:
@@ -117,6 +174,8 @@ def compute_stats(
         "period_deltas": _period_deltas(features),
         "elasticity": _elasticity_summary(model),
         "anomalous_campaigns": _anomalous_campaigns(features),
+        "forecast_reliability": _forecast_reliability(model),
+        "structural_risk_campaigns": _structural_risk_campaigns(features),
     }
     if scenario_forecast is not None:
         stats["budget_scenario_deltas"] = _budget_scenario_deltas(baseline_forecast, scenario_forecast)
@@ -171,6 +230,33 @@ def _template_narrative(stats: dict) -> dict:
         if a["z_score"] < -ANOMALY_Z_THRESHOLD:
             risk_flags.append(f"'{a['campaign_name']}' is a significant ROAS underperformer -- investigate.")
 
+    unreliable = [r for r in stats.get("forecast_reliability", []) if r["low_reliability"]]
+    if unreliable:
+        names = ", ".join(r["segment"] for r in unreliable[:5])
+        lines.append(
+            f"Walk-forward backtesting flags {len(unreliable)} segment(s) as lower-reliability "
+            f"forecasts (wide backtested error or thin interval coverage): {names}. Treat their "
+            f"P10-P90 ranges as more approximate than the rest of the portfolio."
+        )
+        risk_flags.append(
+            f"{len(unreliable)} segment(s) failed to backtest reliably: {names}. "
+            f"See docs/TECHNICAL_DOC.md sec 3.8 for the walk-forward evidence."
+        )
+
+    for sr in stats.get("structural_risk_campaigns", []):
+        lines.append(
+            f"{sr['channel'].capitalize()} has {sr['zero_revenue_campaigns']} of "
+            f"{sr['total_spending_campaigns']} spending campaigns ({sr['zero_revenue_share_pct']}%) "
+            f"with zero lifetime revenue, representing ${sr['wasted_spend']:,.0f} of spend with no "
+            f"measured return -- a structural issue (tracking, targeting, or a dead campaign left "
+            f"running), not routine variance."
+        )
+        risk_flags.append(
+            f"{sr['channel']}: {sr['zero_revenue_share_pct']}% of spending campaigns show zero "
+            f"lifetime revenue (${sr['wasted_spend']:,.0f} wasted spend) -- investigate before "
+            f"trusting this channel's forecast."
+        )
+
     if "budget_scenario_deltas" in stats:
         for bs in stats["budget_scenario_deltas"]:
             if bs["pct_change"] is None:
@@ -194,9 +280,18 @@ def _call_claude(stats: dict, api_key: str, model_name: str) -> dict:
     prompt = (
         "You are a marketing analytics assistant. Below is pre-computed JSON data about an "
         "e-commerce advertiser's blended Google/Bing/Meta performance: period-over-period "
-        "revenue and spend deltas, per-segment spend elasticity, anomalous campaigns by ROAS "
-        "z-score, and (if present) a budget-scenario comparison.\n\n"
-        "Do not invent or restate numbers beyond what's given. Write:\n"
+        "revenue and spend deltas, per-segment spend elasticity with bootstrap confidence "
+        "intervals (used_for_budget_scenarios=false means the CI was too wide to trust for "
+        "budget scaling), anomalous campaigns by ROAS z-score, per-segment walk-forward "
+        "backtest reliability (mean_ape_pct and coverage_pct from held-out validation -- "
+        "low_reliability=true means treat that segment's forecast with more caution), a "
+        "structural check for channels with a high share of zero-lifetime-revenue campaigns, "
+        "and (if present) a budget-scenario comparison.\n\n"
+        "Do not invent or restate numbers beyond what's given. When forecast_reliability or "
+        "structural_risk_campaigns entries are present, factor them explicitly into your "
+        "narrative and risk flags -- these are honest reliability signals, not just "
+        "performance metrics, and should shape how confidently you phrase recommendations. "
+        "Write:\n"
         "1. A 3-5 sentence narrative summary of what's happening and why it matters operationally.\n"
         "2. A short bulleted list of risk flags or operational recommendations.\n\n"
         f"DATA:\n{json.dumps(stats, indent=2)}"

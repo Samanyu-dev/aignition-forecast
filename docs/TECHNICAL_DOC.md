@@ -368,9 +368,24 @@ avoid hallucinated figures:
 
 - Period-over-period (trailing 30 days vs. prior 30 days) revenue/spend
   deltas per channel.
-- Per-segment spend elasticity, with a low-confidence flag for
-  under-observed segments.
+- Per-segment spend elasticity, with its bootstrap CI (§3.4) and an explicit
+  `used_for_budget_scenarios` flag so the LLM knows which elasticity numbers
+  actually drove the budget-scenario math vs. which fell back to β=1.0.
 - Anomalous campaigns by ROAS z-score within their channel (60-day lookback).
+- **Per-segment forecast reliability** (`forecast_reliability`): each
+  segment's own walk-forward backtest method, MAPE, and coverage (§3.8),
+  with a `low_reliability` flag for segments below 40% coverage or above
+  150% MAPE. This is what lets the narrative say "trust this range less"
+  about a specific segment instead of treating every P10-P90 band as
+  equally solid — it's a direct feed from the same backtest that drove the
+  modeling changes in §3, not a separate qualitative judgment.
+- **Structural zero-revenue-campaign check** (`structural_risk_campaigns`):
+  computed live from whichever data is loaded — flags any channel where
+  ≥25% of spending campaigns have zero lifetime revenue. Not hardcoded to
+  Bing; on this dataset it independently rediscovers the Bing finding from
+  §3.1's inventory note (64.3% of Bing's spending campaigns, $2,594 wasted
+  spend) directly from the numbers, which is the point — the same check
+  would catch an equivalent failure on Google or Meta in different data.
 - Budget-scenario deltas (baseline vs. simulated blended revenue per
   horizon), when a scenario is active.
 
@@ -378,5 +393,7 @@ avoid hallucinated figures:
 `generate_causal_summary()` either sends it to Claude for a narrative +
 risk-flag list, or — if `ANTHROPIC_API_KEY` is unset, or the API call fails
 for any reason — falls back to a deterministic template built from the
-same stats dict. The app therefore always runs, fully offline if needed,
-with the LLM as a strict enhancement layer rather than a dependency.
+same stats dict, extended to cover every new stat category so the offline
+path stays just as informative as the live-LLM path. The app therefore
+always runs, fully offline if needed, with the LLM as a strict enhancement
+layer rather than a dependency.
