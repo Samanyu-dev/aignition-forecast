@@ -1,20 +1,22 @@
 {
+  "methodology": "rolling-origin: calibration scale tuned on the older half of available walk-forward cutoffs, coverage/MAPE/pinball reported on the newer held-out half never seen during tuning (fixes an earlier version that tuned and reported on the same 3 cutoffs)",
+  "n_segments_without_holdout_split": 5,
   "per_segment_calibration_scale": {
-    "bing/Search": 2.0,
-    "bing/PerformanceMax": 3.0,
+    "bing/Search": 1.0,
+    "bing/PerformanceMax": 1.0,
     "bing/Audience": 1.0,
     "bing/Shopping": 1.0,
     "google/SEARCH": 1.0,
     "google/PERFORMANCE_MAX": 1.5,
     "google/DISPLAY": 1.0,
     "google/VIDEO": 1.0,
-    "google/DEMAND_GEN": 1.5,
-    "google/SHOPPING": 4.0,
+    "google/DEMAND_GEN": 1.0,
+    "google/SHOPPING": 1.0,
     "meta/Generic": 1.0,
-    "meta/Prospecting_DPA": 4.0,
+    "meta/Prospecting_DPA": 1.0,
     "meta/Remarketing_DPA": 1.0,
     "meta/Remarketing_Brand": 1.0,
-    "meta/Prospecting_Brand": 1.0,
+    "meta/Prospecting_Brand": 1.5,
     "meta/Prospecting_Adv_Plus": 1.0,
     "meta/Generic_Brand": 1.0
   },
@@ -22,47 +24,23 @@
     "bing/Search": {
       "1.0": 0.0,
       "1.5": 0.0,
-      "2.0": 66.66666666666666,
-      "2.5": 66.66666666666666,
-      "3.0": 66.66666666666666,
-      "4.0": 66.66666666666666,
-      "5.0": 66.66666666666666
-    },
-    "bing/PerformanceMax": {
-      "1.0": 0.0,
-      "1.5": 33.33333333333333,
-      "2.0": 66.66666666666666,
-      "2.5": 66.66666666666666,
-      "3.0": 100.0,
-      "4.0": 100.0,
-      "5.0": 100.0
-    },
-    "bing/Audience": {
-      "1.0": 0.0,
-      "1.5": 0.0,
       "2.0": 0.0,
       "2.5": 0.0,
       "3.0": 0.0,
       "4.0": 0.0,
       "5.0": 0.0
     },
-    "bing/Shopping": {
-      "1.0": 0.0,
-      "1.5": 0.0,
-      "2.0": 0.0,
-      "2.5": 0.0,
-      "3.0": 0.0,
-      "4.0": 0.0,
-      "5.0": 0.0
-    },
+    "bing/PerformanceMax": {},
+    "bing/Audience": {},
+    "bing/Shopping": {},
     "google/SEARCH": {
-      "1.0": 66.66666666666666,
-      "1.5": 66.66666666666666,
-      "2.0": 66.66666666666666,
-      "2.5": 66.66666666666666,
-      "3.0": 66.66666666666666,
-      "4.0": 66.66666666666666,
-      "5.0": 66.66666666666666
+      "1.0": 0.0,
+      "1.5": 0.0,
+      "2.0": 0.0,
+      "2.5": 0.0,
+      "3.0": 0.0,
+      "4.0": 0.0,
+      "5.0": 0.0
     },
     "google/PERFORMANCE_MAX": {
       "1.0": 0.0,
@@ -71,9 +49,10 @@
       "2.5": 33.33333333333333,
       "3.0": 33.33333333333333,
       "4.0": 33.33333333333333,
-      "5.0": 0.0
+      "5.0": 33.33333333333333
     },
-    "google/DISPLAY": {
+    "google/DISPLAY": {},
+    "google/VIDEO": {
       "1.0": 100.0,
       "1.5": 100.0,
       "2.0": 100.0,
@@ -82,23 +61,14 @@
       "4.0": 100.0,
       "5.0": 100.0
     },
-    "google/VIDEO": {
-      "1.0": 33.33333333333333,
-      "1.5": 33.33333333333333,
-      "2.0": 33.33333333333333,
-      "2.5": 33.33333333333333,
-      "3.0": 33.33333333333333,
-      "4.0": 33.33333333333333,
-      "5.0": 33.33333333333333
-    },
     "google/DEMAND_GEN": {
-      "1.0": 33.33333333333333,
-      "1.5": 66.66666666666666,
-      "2.0": 33.33333333333333,
-      "2.5": 33.33333333333333,
-      "3.0": 33.33333333333333,
-      "4.0": 33.33333333333333,
-      "5.0": 33.33333333333333
+      "1.0": 50.0,
+      "1.5": 50.0,
+      "2.0": 0.0,
+      "2.5": 0.0,
+      "3.0": 0.0,
+      "4.0": 0.0,
+      "5.0": 0.0
     },
     "google/SHOPPING": {
       "1.0": 33.33333333333333,
@@ -106,17 +76,17 @@
       "2.0": 33.33333333333333,
       "2.5": 33.33333333333333,
       "3.0": 33.33333333333333,
-      "4.0": 66.66666666666666,
+      "4.0": 33.33333333333333,
       "5.0": 33.33333333333333
     },
     "meta/Generic": {
-      "1.0": 66.66666666666666,
-      "1.5": 66.66666666666666,
-      "2.0": 66.66666666666666,
-      "2.5": 66.66666666666666,
-      "3.0": 66.66666666666666,
-      "4.0": 66.66666666666666,
-      "5.0": 66.66666666666666
+      "1.0": 33.33333333333333,
+      "1.5": 33.33333333333333,
+      "2.0": 33.33333333333333,
+      "2.5": 33.33333333333333,
+      "3.0": 33.33333333333333,
+      "4.0": 33.33333333333333,
+      "5.0": 33.33333333333333
     },
     "meta/Prospecting_DPA": {
       "1.0": 0.0,
@@ -124,17 +94,17 @@
       "2.0": 0.0,
       "2.5": 0.0,
       "3.0": 0.0,
-      "4.0": 33.33333333333333,
-      "5.0": 33.33333333333333
+      "4.0": 0.0,
+      "5.0": 0.0
     },
     "meta/Remarketing_DPA": {
-      "1.0": 66.66666666666666,
-      "1.5": 33.33333333333333,
-      "2.0": 33.33333333333333,
+      "1.0": 0.0,
+      "1.5": 0.0,
+      "2.0": 0.0,
       "2.5": 0.0,
-      "3.0": 33.33333333333333,
-      "4.0": 33.33333333333333,
-      "5.0": 33.33333333333333
+      "3.0": 0.0,
+      "4.0": 0.0,
+      "5.0": 0.0
     },
     "meta/Remarketing_Brand": {
       "1.0": 33.33333333333333,
@@ -146,23 +116,15 @@
       "5.0": 33.33333333333333
     },
     "meta/Prospecting_Brand": {
-      "1.0": 66.66666666666666,
-      "1.5": 66.66666666666666,
-      "2.0": 66.66666666666666,
+      "1.0": 0.0,
+      "1.5": 33.33333333333333,
+      "2.0": 33.33333333333333,
       "2.5": 33.33333333333333,
       "3.0": 33.33333333333333,
       "4.0": 33.33333333333333,
-      "5.0": 0.0
+      "5.0": 33.33333333333333
     },
-    "meta/Prospecting_Adv_Plus": {
-      "1.0": 0.0,
-      "1.5": 0.0,
-      "2.0": 0.0,
-      "2.5": 0.0,
-      "3.0": 0.0,
-      "4.0": 0.0,
-      "5.0": 0.0
-    },
+    "meta/Prospecting_Adv_Plus": {},
     "meta/Generic_Brand": {
       "1.0": 66.66666666666666,
       "1.5": 66.66666666666666,
@@ -173,129 +135,146 @@
       "5.0": 66.66666666666666
     }
   },
-  "overall_mean_ape_pct": 49083.990849799964,
-  "overall_median_ape_pct": 54.80863170265135,
-  "overall_mean_pinball_loss": 3060.430428962269,
-  "overall_coverage_pct": 57.777777777777764,
+  "overall_mean_ape_pct": 49163.40510193483,
+  "overall_median_ape_pct": 66.43174847404616,
+  "overall_mean_pinball_loss": 4002.632679241825,
+  "overall_coverage_pct": 37.777777777777764,
   "per_segment": {
     "bing/Search": {
       "method": "holt_winters",
-      "mean_ape_pct": 322.4342892403599,
-      "mean_pinball_loss": 361.46991634350826,
-      "coverage_pct": 66.66666666666666,
-      "n_scored": 3
+      "mean_ape_pct": 162.78278724896697,
+      "mean_pinball_loss": 453.2762840661708,
+      "coverage_pct": 0.0,
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "bing/PerformanceMax": {
       "method": "empirical",
-      "mean_ape_pct": 54.80863170265135,
-      "mean_pinball_loss": 55.39895871694915,
-      "coverage_pct": 100.0,
-      "n_scored": 3
+      "mean_ape_pct": 66.43174847404616,
+      "mean_pinball_loss": 97.10090266138214,
+      "coverage_pct": 0.0,
+      "n_scored": 3,
+      "no_calibration_tuning": true
     },
     "bing/Audience": {
       "method": "empirical",
       "mean_ape_pct": null,
       "mean_pinball_loss": null,
       "coverage_pct": null,
-      "n_scored": 0
+      "n_scored": 0,
+      "no_calibration_tuning": true
     },
     "bing/Shopping": {
       "method": "empirical",
       "mean_ape_pct": 100.0,
       "mean_pinball_loss": 232.785,
       "coverage_pct": 0.0,
-      "n_scored": 1
+      "n_scored": 1,
+      "no_calibration_tuning": true
     },
     "google/SEARCH": {
       "method": "holt_winters",
-      "mean_ape_pct": 33.199094382100846,
-      "mean_pinball_loss": 8795.785043457092,
+      "mean_ape_pct": 34.38944688153439,
+      "mean_pinball_loss": 8944.609795914284,
       "coverage_pct": 66.66666666666666,
-      "n_scored": 3
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "google/PERFORMANCE_MAX": {
       "method": "holt_winters",
-      "mean_ape_pct": 30.799898265115672,
-      "mean_pinball_loss": 11795.849008110577,
+      "mean_ape_pct": 31.1966812247049,
+      "mean_pinball_loss": 12174.286773857159,
       "coverage_pct": 33.33333333333333,
-      "n_scored": 3
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "google/DISPLAY": {
       "method": "empirical",
       "mean_ape_pct": 0.0,
       "mean_pinball_loss": 0.0,
       "coverage_pct": 100.0,
-      "n_scored": 3
+      "n_scored": 3,
+      "no_calibration_tuning": true
     },
     "google/VIDEO": {
       "method": "holt_winters",
-      "mean_ape_pct": 1876.8684615057653,
-      "mean_pinball_loss": 20.520198761613877,
+      "mean_ape_pct": 1878.819879588447,
+      "mean_pinball_loss": 20.492664396431252,
       "coverage_pct": 33.33333333333333,
-      "n_scored": 3
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "google/DEMAND_GEN": {
       "method": "empirical",
-      "mean_ape_pct": 89.63120576412825,
-      "mean_pinball_loss": 436.30311827046654,
-      "coverage_pct": 66.66666666666666,
-      "n_scored": 3
+      "mean_ape_pct": 107.33412817834991,
+      "mean_pinball_loss": 645.2571066099295,
+      "coverage_pct": 0.0,
+      "n_scored": 2,
+      "no_calibration_tuning": false
     },
     "google/SHOPPING": {
       "method": "empirical",
-      "mean_ape_pct": 50.56328736908214,
-      "mean_pinball_loss": 11592.242856592953,
-      "coverage_pct": 66.66666666666666,
-      "n_scored": 3
+      "mean_ape_pct": 62.44679343936499,
+      "mean_pinball_loss": 23059.09111387385,
+      "coverage_pct": 33.33333333333333,
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "meta/Generic": {
       "method": "empirical",
       "mean_ape_pct": 33.333333333333336,
       "mean_pinball_loss": 669.9250000000001,
       "coverage_pct": 66.66666666666666,
-      "n_scored": 3
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "meta/Prospecting_DPA": {
       "method": "holt_winters",
-      "mean_ape_pct": 290.5734355911029,
-      "mean_pinball_loss": 3868.5910059138746,
-      "coverage_pct": 33.33333333333333,
-      "n_scored": 3
+      "mean_ape_pct": 125.37044767783702,
+      "mean_pinball_loss": 3978.6107463178596,
+      "coverage_pct": 0.0,
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "meta/Remarketing_DPA": {
       "method": "empirical",
-      "mean_ape_pct": 53.37247653234423,
-      "mean_pinball_loss": 2171.417053883741,
+      "mean_ape_pct": 53.10836232119383,
+      "mean_pinball_loss": 2202.2251449520086,
       "coverage_pct": 66.66666666666666,
-      "n_scored": 3
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "meta/Remarketing_Brand": {
       "method": "empirical",
-      "mean_ape_pct": 732999.8851191726,
-      "mean_pinball_loss": 2414.0233308075763,
+      "mean_ape_pct": 734451.1423729326,
+      "mean_pinball_loss": 2421.339368645007,
       "coverage_pct": 33.33333333333333,
-      "n_scored": 3
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "meta/Prospecting_Brand": {
       "method": "empirical",
-      "mean_ape_pct": 38.601586900072625,
-      "mean_pinball_loss": 3347.6501472921786,
+      "mean_ape_pct": 61.34150370377453,
+      "mean_pinball_loss": 4999.595101046431,
       "coverage_pct": 66.66666666666666,
-      "n_scored": 3
+      "n_scored": 3,
+      "no_calibration_tuning": false
     },
     "meta/Prospecting_Adv_Plus": {
       "method": "empirical",
       "mean_ape_pct": null,
       "mean_pinball_loss": null,
       "coverage_pct": null,
-      "n_scored": 0
+      "n_scored": 0,
+      "no_calibration_tuning": true
     },
     "meta/Generic_Brand": {
       "method": "holt_winters",
-      "mean_ape_pct": 285.79192724073374,
-      "mean_pinball_loss": 144.49579628350406,
+      "mean_ape_pct": 283.37904401831116,
+      "mean_pinball_loss": 140.8951862868473,
       "coverage_pct": 66.66666666666666,
-      "n_scored": 3
+      "n_scored": 3,
+      "no_calibration_tuning": false
     }
   }
 }

@@ -195,15 +195,18 @@ if _covered:
         "Current model's aggregate P10-P90 coverage",
         f"{sum(_covered) / len(_covered):.1f}%",
         help="Fraction of walk-forward-backtested segments whose actual held-out revenue fell "
-             "inside the model's own P10-P90 range. Nominal target is 80%. Improved from an "
-             "initial 37.2% via method selection + calibration -- see TECHNICAL_DOC.md sec 3.7-3.8.",
+             "inside the model's own P10-P90 range, evaluated with rolling-origin validation "
+             "(calibration tuned on older folds, coverage reported on newer folds never seen "
+             "during tuning). Nominal target is 80%. See TECHNICAL_DOC.md sec 3.7-3.8.",
     )
 st.caption(
-    "Each segment's model was walk-forward validated (3 held-out 30-day windows, refit on "
-    "data before each cutoff). Method-selection + calibration fixes improved aggregate P10-P90 "
-    "coverage from 37.2% to 57.8% and cut mean pinball loss ~15% -- see docs/TECHNICAL_DOC.md "
-    "sec 3.7-3.8 for the full before/after. Still short of the 80% nominal target; segments "
-    "flagged below should be read with extra caution."
+    "Each segment's model was walk-forward validated with a rolling-origin split (calibration "
+    "tuned on older folds, coverage reported on newer held-out folds it never saw) -- see "
+    "docs/TECHNICAL_DOC.md sec 3.8 for why: an earlier version of this calibration search tuned "
+    "and reported on the *same* folds, which was optimistic (it originally reported 57.8% "
+    "coverage; the honest rolling-origin number is ~37.8%, barely above the pre-fix 37.2% "
+    "baseline). Method selection still meaningfully improved point accuracy on the worst "
+    "segments even though interval width did not improve -- both are reported honestly below."
 )
 reliability = scenario_data.get("stats", {}).get("forecast_reliability", [])
 if reliability:

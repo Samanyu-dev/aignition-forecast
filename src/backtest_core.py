@@ -5,7 +5,7 @@ src/backtest.py (the standalone CLI report). Deliberately has NO dependency
 on train.py, to keep train.py -> backtest_core.py one-directional (train.py
 needs this at fit time; backtest_core.py must not need train.py back).
 """
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -23,6 +23,25 @@ def pinball_loss(y_true: float, y_pred: float, tau: float) -> float:
     return max(tau * diff, (tau - 1) * diff)
 
 
+def generate_cutoffs(daily: pd.DataFrame, n_cutoffs: int, test_horizon_days: int = TEST_HORIZON_DAYS) -> list:
+    """All candidate cutoff dates, oldest first, spaced test_horizon_days apart,
+    ending test_horizon_days before the segment's last observed date."""
+    last_date = daily["date"].max()
+    return [last_date - pd.Timedelta(days=test_horizon_days * i) for i in range(n_cutoffs, 0, -1)]
+
+
+def valid_cutoffs(daily: pd.DataFrame, cutoffs: list, test_horizon_days: int, min_train_days: int) -> list:
+    """Filter to cutoffs that actually have enough training history before
+    them and enough test data after them to be scoreable."""
+    out = []
+    for cutoff in cutoffs:
+        train_slice = daily[daily.date <= cutoff]
+        test_slice = daily[(daily.date > cutoff) & (daily.date <= cutoff + pd.Timedelta(days=test_horizon_days))]
+        if len(train_slice) >= min_train_days and len(test_slice) >= test_horizon_days:
+            out.append(cutoff)
+    return out
+
+
 def evaluate_segment_method(
     daily: pd.DataFrame,
     fit_fn: Callable[[pd.DataFrame], dict],
@@ -33,6 +52,7 @@ def evaluate_segment_method(
     n_cutoffs: int = N_CUTOFFS,
     min_train_days: int = MIN_TRAIN_DAYS,
     n_sims: int = N_SIMS,
+    cutoffs: Optional[List[pd.Timestamp]] = None,
 ) -> dict:
     """Walk-forward evaluate one (segment, fitting function) pair.
 
@@ -40,9 +60,16 @@ def evaluate_segment_method(
     of base_uncertainty_inflation -- used both to score a candidate model
     as-is (residual_scale=1.0) and to grid-search a calibration factor that
     widens under-covered intervals (residual_scale>1.0).
+
+    cutoffs: explicit list of cutoff dates to evaluate, overriding the
+    default "last n_cutoffs windows" generation. Used for rolling-origin
+    calibration -- pass the earlier half of available cutoffs to *tune* a
+    calibration scale, then the later, never-touched-during-tuning half to
+    *report* coverage, so the reported number isn't evaluated on the same
+    data it was fit to (see docs/TECHNICAL_DOC.md sec 3.8).
     """
-    last_date = daily["date"].max()
-    cutoffs = [last_date - pd.Timedelta(days=test_horizon_days * i) for i in range(n_cutoffs, 0, -1)]
+    if cutoffs is None:
+        cutoffs = generate_cutoffs(daily, n_cutoffs, test_horizon_days)
 
     per_cutoff = []
     for cutoff in cutoffs:

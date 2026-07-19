@@ -215,9 +215,12 @@ dataset, purely from the numbers.
    schemas and catches a real data-quality issue (Meta's mislabeled column)
    through statistical evidence, not assumption.
 2. **Forecasting** produces genuinely probabilistic (not just point-estimate)
-   ranges, validated by walk-forward backtesting rather than asserted (see
-   `docs/TECHNICAL_DOC.md` §3.7–3.8 for the honest 37.2%→57.8% calibration
-   story).
+   ranges, validated by walk-forward backtesting rather than asserted --
+   including catching and fixing a double-dipping flaw in our own
+   calibration methodology and reporting the corrected, less flattering
+   number (37.2%→37.8%, honestly rolling-origin validated) rather than the
+   optimistic 57.8% an earlier, methodologically flawed version reported
+   (see `docs/TECHNICAL_DOC.md` §3.7–3.8).
 3. **Budget simulation** responds non-linearly and per-segment, using
    confidence-gated elasticity rather than a single global multiplier —
    and goes one step further into a **specific, priced recommendation**

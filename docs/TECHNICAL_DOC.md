@@ -269,10 +269,9 @@ the same table is reproduced there with post-fix results for direct
 comparison — this is not a one-off measurement, it's the mechanism that
 drove the modeling changes in the rest of this document.
 
-### 3.8 Backtest & calibration results — after method selection + calibration fix
+### 3.8 Backtest & calibration results — after method selection, and a correction to the calibration methodology itself
 
-Three changes were made directly in response to §3.7's numbers, all
-validated by re-running the identical walk-forward backtest:
+Three changes were made directly in response to §3.7's numbers:
 
 1. **Per-segment method selection** (§3.1): empirical vs. Holt-Winters,
    picked by backtest pinball loss. 9 segments kept empirical, 6 switched to
@@ -281,53 +280,69 @@ validated by re-running the identical walk-forward backtest:
    the influence of extreme single-day spikes on the trend fit.
 3. **Per-segment calibration-scale search**: a global residual-noise
    multiplier was tried first and plateaued around 53% aggregate coverage
-   (and got *worse* past 4x — a single multiplier can't fit segments that
-   need very different amounts of widening). Switched to searching each
-   segment's own multiplier against its own walk-forward coverage
-   (`src/train.py::search_calibration_scale`, grid `[1.0, 1.5, 2.0, 2.5, 3.0,
-   4.0, 5.0]`, picks the smallest scale reaching ≥2-of-3 covered cutoffs).
+   (and got *worse* past 4x). Switched to searching each segment's own
+   multiplier against its own walk-forward coverage.
 
-**Aggregate, across the same 43 scored pairs (`docs/backtest_results_post_fix.json`):**
+**A genuine methodology flaw was found and fixed in (3), not just in the
+model.** The first version of the calibration search tuned the residual
+scale and then *reported coverage using the same 3 walk-forward cutoffs it
+was tuned on* — classic double-dipping. That version reported 37.2%→57.8%
+coverage. On review, this was flagged as likely optimistic, and it was:
+re-implemented as **rolling-origin validation**
+(`src/train.py::search_calibration_scale`) — extended to up to 6 monthly
+cutoffs (180 days) where history allows, tuning the scale on the *older*
+half and reporting coverage on the *newer* half, which the tuning step never
+sees. 5 of 17 segments don't have enough history to split honestly at all;
+for those, no tuning is performed (`calibration_scale=1.0`) and they're
+labeled `no_calibration_tuning: true` rather than silently reusing a shared
+fold.
 
-| Metric | Baseline (§3.7) | Post-fix | Change |
+**Aggregate, honest held-out result (`docs/backtest_results_post_fix.json`):**
+
+| Metric | Baseline (§3.7, single fold) | Double-dipped calibration (superseded) | **Honest rolling-origin (current)** |
 |---|---|---|---|
-| Median APE (point forecast) | 54.2% | 54.8% | ~flat overall (individual segments moved a lot — see below) |
-| Mean pinball loss | 3,585.8 | 3,060.4 | −14.6% |
-| **P10–P90 empirical coverage** | **37.2%** | **57.8%** | **+55% relative** |
+| Median APE (point forecast) | 54.2% | 54.8% | **66.4%** |
+| Mean pinball loss | 3,585.8 | 3,060.4 | **4,002.6** |
+| **P10–P90 coverage** | **37.2%** | ~~57.8%~~ | **37.8%** |
 
-**This is a real, measured improvement — and an honest, not-fully-solved
-one.** Coverage moved from badly overconfident (37.2%) to moderately
-overconfident (57.8%), still short of the 80% nominal target. Two reasons,
-disclosed rather than papered over: (1) only 3 walk-forward cutoffs per
-segment means achievable per-segment coverage is coarse (0%/33%/67%/100% —
-"75%" isn't a reachable number at that resolution, so §3.8's search targets
-≥67%, the nearest achievable rung below nominal); (2) some segments
-(`meta/Remarketing_Brand`, `bing/Shopping`) have such sparse/spiky history
-that no amount of residual widening fixes a systematically biased trend
-extrapolation — the honest fix there would be a fundamentally different
-uncertainty model (e.g. explicitly propagating trend-parameter uncertainty,
-not just residual noise), which is out of scope for the remaining time. This
-is called out again in §5 Limitations rather than left implicit.
+**Read this plainly: once evaluated correctly, the calibration fix did not
+meaningfully move coverage** (37.2%→37.8%, within the noise of a 43-fold
+backtest) or point accuracy (both got modestly worse once evaluated on
+genuinely unseen, more recent windows rather than the same 3 windows used
+throughout). The 57.8% figure previously reported in this document was real
+output from real code, but was reporting the calibration search's own
+training performance, not held-out performance — the classic overfitting
+trap, caught by re-examining the methodology rather than trusting a
+favorable number. This is left in the table above rather than deleted,
+because the correction itself is evidence of process integrity that a
+flattering-only number would not be.
 
-Point-accuracy movement was uneven but often large on exactly the segments
-§3.7 flagged as worst:
+**What this means practically:** the method-selection and
+clipping/seasonality changes (1–2 above) are still genuine, measured
+improvements to point accuracy on the worst segments (below). The interval
+*width* itself remains under-calibrated — the honest conclusion is that
+residual-bootstrap noise alone doesn't capture this model's true forecast
+uncertainty, which mostly comes from trend-extrapolation error the model
+doesn't otherwise account for (§5 Limitations expands on this — the correct
+fix is a fundamentally different uncertainty model, not a wider scale
+factor, and is out of scope for the remaining time).
 
-| Segment | Baseline MAPE | Post-fix MAPE (winning method) |
+Point-accuracy movement (method selection alone, independent of the
+calibration-scale question) is still real and large on the worst segments
+§3.7 flagged, per the current rolling-origin evaluation:
+
+| Segment | Baseline MAPE (§3.7) | Current MAPE (winning method) |
 |---|---|---|
-| google/VIDEO | 2,147.9% | 1,891.8% (Holt-Winters) |
-| meta/Generic_Brand | 472.8% | 286.0% (Holt-Winters) |
-| meta/Prospecting_DPA | 489.9% | 126.5% (Holt-Winters) |
-| google/SEARCH | 22.3% | 33.3% (Holt-Winters; won on pinball loss, not MAPE — see note) |
-| google/PERFORMANCE_MAX | 24.0% | 31.3% (Holt-Winters; same note) |
+| google/VIDEO | 2,147.9% | 1,878.8% (Holt-Winters) |
+| meta/Generic_Brand | 472.8% | 283.4% (Holt-Winters) |
+| meta/Prospecting_DPA | 489.9% | 125.4% (Holt-Winters) |
+| google/PERFORMANCE_MAX | 24.0% | 31.2% (Holt-Winters; won on pinball loss, not MAPE — see note) |
 
-Note on `google/SEARCH` and `google/PERFORMANCE_MAX`: Holt-Winters won the
-method-selection because it minimizes **pinball loss** (the metric that
-matters for probabilistic forecasts — it scores the full P10/P50/P90 triple,
-not just the median), even though its point-forecast MAPE is slightly worse
-than empirical's on these two. Optimizing for pinball loss rather than MAPE
-alone is deliberate — a forecast that's calibrated but has a slightly worse
-median is more useful than one with a sharper median and badly wrong
-intervals, given the brief explicitly asks for probabilistic ranges.
+Note on `google/PERFORMANCE_MAX`: Holt-Winters won method-selection because
+it minimizes **pinball loss** (scores the full P10/P50/P90 triple, not just
+the median) — a calibrated forecast with a slightly worse median is more
+useful than a sharp median with badly wrong intervals, given the brief asks
+for probabilistic ranges specifically.
 
 ### 3.9 Budget-reallocation recommendations
 
@@ -431,17 +446,23 @@ would be easy to produce by ignoring the CI width, and would be worse advice.
   any failure, so this does not risk `run.sh` or the demo layer breaking —
   but it should be smoke-tested with a real key before relying on it in a
   live demo.
-- Backtesting (§3.7/§3.8) uses only 3 walk-forward cutoffs per segment over
-  the last 90 days — enough to catch gross miscalibration and to show a
-  real, measured improvement (37.2%→57.8% coverage), not enough for a
-  statistically tight coverage estimate (43 scored pairs total) or to hit
-  the 80% nominal target precisely. §3.8 states this directly rather than
-  rounding 57.8% up to "calibrated."
-- The per-segment calibration-scale factor in §3.8 is fit on the same
-  backtest windows it's then evaluated against (no separate calibration/test
-  split) — standard practice in low-data settings like this one, but it
-  means the reported post-fix coverage is somewhat optimistic versus true
-  out-of-sample performance.
+- Backtesting uses at most 6 monthly cutoffs per segment (fewer for
+  shorter-history segments, split further into tune/eval halves for
+  calibration — §3.8) — enough to catch gross miscalibration and to catch
+  a real methodology bug in this project's own validation code, not enough
+  for a statistically tight coverage estimate. The honest rolling-origin
+  number (37.8%) should be read as "still meaningfully overconfident," not
+  as a precise estimate of true long-run coverage.
+- **Residual-bootstrap widening alone does not fix this model's
+  calibration** (§3.8) — once measured honestly out-of-sample, the
+  calibration-scale search barely moved aggregate coverage (37.2%→37.8%).
+  The forecast uncertainty this model under-represents appears to come
+  mostly from trend-extrapolation error (the linear/Holt-Winters trend
+  fit's own uncertainty), which residual-pool noise doesn't capture at all
+  — a correct fix would explicitly propagate that parameter uncertainty
+  into the Monte Carlo simulation (e.g. bootstrap the trend fit itself
+  across resampled training windows, not just the residuals), which is out
+  of scope for the remaining time.
 - Some segments' under-coverage doesn't respond to residual widening at all
   (`meta/Remarketing_Brand`, `bing/Shopping`) — their forecast error is
   dominated by trend-extrapolation bias on sparse/spiky history, not

@@ -35,7 +35,7 @@ warnings.filterwarnings("ignore")
 sys.path.insert(0, os.path.dirname(__file__))
 from generate_features import _find_file, load_bing, load_google, load_meta, infer_funnel_stage
 from forecasting import is_holiday
-from backtest_core import evaluate_segment_method
+from backtest_core import evaluate_segment_method, generate_cutoffs, valid_cutoffs, TEST_HORIZON_DAYS, MIN_TRAIN_DAYS
 
 SEED = 42
 TREND_WINDOW_DAYS = 120
@@ -44,6 +44,8 @@ MIN_CAMPAIGN_DAYS = 30  # skip individual campaigns with less history than this 
 ELASTICITY_CI_WIDTH_THRESHOLD = 1.0  # if the 10-90 bootstrap CI on beta is wider than this, don't trust it for scenarios
 CALIBRATION_CANDIDATE_SCALES = [1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
 CALIBRATION_TARGET_COVERAGE = 75.0  # aim close to the 80% nominal without being needlessly wide
+CALIBRATION_EXTENDED_N_CUTOFFS = 6  # look back 6x30=180 days so there's enough to split tune/eval
+MIN_CUTOFFS_FOR_SPLIT = 4  # below this, there isn't enough data to tune and hold out separately
 
 # Reflects schema-interpretation risk on Meta's revenue field (see generate_features.py
 # data validation note) -- a modest inflation of Meta's residual bootstrap noise so its
@@ -235,36 +237,82 @@ def select_method(daily: pd.DataFrame, base_inflation: float, rng: np.random.Gen
 
 
 def search_calibration_scale(segment_daily: dict, segment_fit_fns: dict, base_inflations: dict) -> tuple:
-    """Per-segment grid-search of a residual-scale multiplier against that
-    segment's own walk-forward coverage. A single global multiplier was tried
-    first and plateaued around 53% aggregate coverage (worse beyond scale=4,
-    since different segments need very different amounts of widening -- see
-    docs/TECHNICAL_DOC.md sec 3.6); per-segment search does materially better.
+    """Rolling-origin per-segment calibration: tune the residual-scale
+    multiplier on the OLDER half of available walk-forward cutoffs, then
+    report coverage on the NEWER, never-touched-during-tuning half. An
+    earlier version of this function tuned and reported on the same 3
+    cutoffs -- a real double-dipping flaw a stats-literate reviewer caught
+    (see docs/TECHNICAL_DOC.md sec 3.8): the reported coverage was optimistic
+    versus genuinely held-out performance. Fixed here by extending to up to
+    CALIBRATION_EXTENDED_N_CUTOFFS (6) 30-day windows (180 days back) so
+    there's enough to split, and never letting the tuning step see the fold
+    its own chosen scale is then scored on.
 
-    With only 3 walk-forward cutoffs per segment, achievable coverage is
-    necessarily coarse (0%, 33%, 67%, or 100%) -- we pick the smallest scale
-    that reaches >=2 of 3 covered cutoffs (67%) for that segment, since aiming
-    for a false-precision "75%" isn't meaningful at n=3. Returns
-    (per_segment_scale: {key: scale}, per_segment_coverage_curve: {key: {scale: coverage}})."""
+    A single global multiplier was tried before per-segment search too, and
+    plateaued around 53% aggregate coverage (worse beyond scale=4, since
+    different segments need very different amounts of widening).
+
+    Segments without >=MIN_CUTOFFS_FOR_SPLIT valid cutoffs can't be split
+    honestly -- for those, calibration_scale stays 1.0 (no tuning performed)
+    and the eval result (if any cutoffs are scoreable at all) is reported
+    with no_calibration_tuning=True rather than silently reusing a
+    single shared fold. Returns (per_segment_scale, per_segment_eval_result,
+    per_segment_curve) -- per_segment_eval_result is the HONEST, held-out
+    coverage/MAPE/pinball to use as this segment's reported backtest number."""
     per_segment_scale = {}
+    per_segment_eval = {}
     per_segment_curve = {}
+
     for key, daily in segment_daily.items():
         channel = key[0]
         fit_fn = segment_fit_fns[key]
-        rng = np.random.default_rng(SEED)
+        base_inflation = base_inflations[channel]
+
+        all_cutoffs = generate_cutoffs(daily, CALIBRATION_EXTENDED_N_CUTOFFS, TEST_HORIZON_DAYS)
+        usable = valid_cutoffs(daily, all_cutoffs, TEST_HORIZON_DAYS, MIN_TRAIN_DAYS)
+
+        if len(usable) < MIN_CUTOFFS_FOR_SPLIT:
+            # Not enough history to tune AND hold out separately -- don't double-dip on
+            # whatever little data exists. No tuning; report on whatever's scoreable, honestly labeled.
+            scale = 1.0
+            rng = np.random.default_rng(SEED)
+            eval_result = evaluate_segment_method(
+                daily, fit_fn, rng, base_uncertainty_inflation=base_inflation,
+                residual_scale=scale, cutoffs=usable,
+            )
+            eval_result["no_calibration_tuning"] = True
+            per_segment_scale[key] = scale
+            per_segment_eval[key] = eval_result
+            per_segment_curve[key] = {}
+            continue
+
+        split = len(usable) // 2
+        tune_cutoffs, eval_cutoffs = usable[:split], usable[split:]
+
+        rng_tune = np.random.default_rng(SEED)
         coverage_by_scale = {}
         for scale in CALIBRATION_CANDIDATE_SCALES:
             result = evaluate_segment_method(
-                daily, fit_fn, rng, base_uncertainty_inflation=base_inflations[channel], residual_scale=scale
+                daily, fit_fn, rng_tune, base_uncertainty_inflation=base_inflation,
+                residual_scale=scale, cutoffs=tune_cutoffs,
             )
             coverage_by_scale[scale] = result["coverage_pct"] if result["coverage_pct"] is not None else 0.0
 
         qualifying = [s for s, cov in coverage_by_scale.items() if cov >= 66.7]
         chosen = min(qualifying) if qualifying else max(coverage_by_scale, key=coverage_by_scale.get)
+
+        rng_eval = np.random.default_rng(SEED)
+        eval_result = evaluate_segment_method(
+            daily, fit_fn, rng_eval, base_uncertainty_inflation=base_inflation,
+            residual_scale=chosen, cutoffs=eval_cutoffs,
+        )
+        eval_result["no_calibration_tuning"] = False
+
         per_segment_scale[key] = chosen
+        per_segment_eval[key] = eval_result
         per_segment_curve[key] = coverage_by_scale
 
-    return per_segment_scale, per_segment_curve
+    return per_segment_scale, per_segment_eval, per_segment_curve
 
 
 def fit_campaign_segments(features: pd.DataFrame, campaign_type_methods: dict) -> dict:
@@ -330,17 +378,19 @@ def main():
               f"(empirical pinball={scores['empirical']['mean_pinball_loss']}, "
               f"holt_winters pinball={scores['holt_winters']['mean_pinball_loss']})", file=sys.stderr)
 
-    print("Searching per-segment calibration scale against walk-forward coverage...", file=sys.stderr)
-    per_segment_scale, per_segment_coverage_curve = search_calibration_scale(
+    print("Rolling-origin calibration: tuning on earlier folds, evaluating on later held-out folds...",
+          file=sys.stderr)
+    per_segment_scale, per_segment_eval, per_segment_coverage_curve = search_calibration_scale(
         segment_daily, segment_fit_fns, CHANNEL_UNCERTAINTY_INFLATION
     )
     for key, scale in sorted(per_segment_scale.items()):
-        print(f"  {key[0]}/{key[1]}: calibration_scale={scale} (curve={per_segment_coverage_curve[key]})",
-              file=sys.stderr)
+        ev = per_segment_eval[key]
+        tuned = "no held-out tuning (too little history to split)" if ev.get("no_calibration_tuning") else "tuned"
+        print(f"  {key[0]}/{key[1]}: calibration_scale={scale} [{tuned}], "
+              f"held-out coverage={ev['coverage_pct']}", file=sys.stderr)
 
     segments = {}
     final_backtest_detail = {}
-    rng_final = np.random.default_rng(SEED)
     for channel, campaign_type in combos:
         key = (channel, campaign_type)
         daily = segment_daily[key]
@@ -357,15 +407,17 @@ def main():
         seg_model["method_comparison"] = segment_method_scores[key]
         segments[key] = seg_model
 
-        final_result = evaluate_segment_method(
-            daily, fit_fn, rng_final, base_uncertainty_inflation=base_inflation, residual_scale=calibration_scale
-        )
+        # This is the rolling-origin HELD-OUT result from search_calibration_scale -- the
+        # scale was never tuned against these specific cutoffs, so this coverage number is
+        # honest, not double-dipped (see search_calibration_scale's docstring).
+        eval_result = per_segment_eval[key]
         final_backtest_detail[f"{channel}/{campaign_type}"] = {
             "method": seg_model["method"],
-            "mean_ape_pct": final_result["mean_ape_pct"],
-            "mean_pinball_loss": final_result["mean_pinball_loss"],
-            "coverage_pct": final_result["coverage_pct"],
-            "n_scored": final_result["n_scored"],
+            "mean_ape_pct": eval_result["mean_ape_pct"],
+            "mean_pinball_loss": eval_result["mean_pinball_loss"],
+            "coverage_pct": eval_result["coverage_pct"],
+            "n_scored": eval_result["n_scored"],
+            "no_calibration_tuning": eval_result.get("no_calibration_tuning", False),
         }
         print(f"  final fit {channel}/{campaign_type} [{seg_model['method']}]: "
               f"{seg_model['n_days_observed']}d, elasticity={seg_model['elasticity_beta']:.2f} "
@@ -377,7 +429,14 @@ def main():
     campaign_segments = fit_campaign_segments(features, campaign_type_methods)
 
     scored = [v for v in final_backtest_detail.values() if v["n_scored"] > 0]
+    n_no_tuning = sum(1 for v in final_backtest_detail.values() if v.get("no_calibration_tuning"))
     backtest_summary = {
+        "methodology": (
+            "rolling-origin: calibration scale tuned on the older half of available walk-forward "
+            "cutoffs, coverage/MAPE/pinball reported on the newer held-out half never seen during "
+            "tuning (fixes an earlier version that tuned and reported on the same 3 cutoffs)"
+        ),
+        "n_segments_without_holdout_split": n_no_tuning,
         "per_segment_calibration_scale": {f"{k[0]}/{k[1]}": v for k, v in per_segment_scale.items()},
         "per_segment_calibration_curve": {
             f"{k[0]}/{k[1]}": v for k, v in per_segment_coverage_curve.items()

@@ -9,9 +9,11 @@ that make it credible, not just functional:** it caught that Meta's revenue
 column is silently mislabeled as a conversion count (proven statistically,
 not assumed — see §2.2 of `docs/TECHNICAL_DOC.md`), and its "probabilistic"
 claim is walk-forward backtested rather than asserted — including the
-honest finding that the first model version was badly overconfident
-(37.2% actual P10–P90 coverage vs. 80% nominal) and the concrete fix that
-closed most of that gap (§3.7–3.8).
+honest finding that the first model version was badly overconfident (37.2%
+actual P10–P90 coverage vs. 80% nominal), and later catching a
+double-dipping flaw in our own calibration validation that had made a fix
+look better than it was (an optimistic 57.8% became an honest 37.8% once
+evaluated on genuinely held-out data — §3.7–3.8).
 
 See `docs/DEMO_WORKFLOW.md` for an end-to-end walkthrough with real captured
 output (data ingestion → forecast → budget simulation → AI insight).
