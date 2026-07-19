@@ -24,17 +24,34 @@ HORIZONS = (30, 60, 90)
 DEFAULT_N_SIMS = 2000
 SEED = 42
 
+# Nov 20 - Dec 31 each year: covers Black Friday/Cyber Monday and the December
+# holiday shopping runup. Derived from an observed +5.1 sigma Black Friday 2024
+# spike and a repeated Dec 2025 Q4 pattern in this dataset (see TECHNICAL_DOC.md).
+HOLIDAY_START = (11, 20)
+HOLIDAY_END = (12, 31)
+
+
+def is_holiday(ts: pd.Timestamp) -> bool:
+    md = (ts.month, ts.day)
+    return HOLIDAY_START <= md <= HOLIDAY_END
+
 
 def _simulate_segment_daily(seg: dict, horizon_days: int, n_sims: int, rng: np.random.Generator) -> np.ndarray:
     """Returns an (n_sims, horizon_days) array of simulated daily revenue."""
     k = np.arange(1, horizon_days + 1)
-    trend = seg["trend_intercept_at_end"] + seg["trend_slope"] * k
-    trend = np.clip(trend, 0.0, None)
-
     future_dates = pd.date_range(seg["last_train_date"] + pd.Timedelta(days=1), periods=horizon_days, freq="D")
-    dow_mult = np.array([seg["dow_factor"][d] for d in future_dates.dayofweek])
 
-    point = trend * dow_mult  # shape (horizon_days,)
+    if seg.get("method") == "holt_winters":
+        hw_fc = seg["hw_point_forecast"]
+        idx = np.clip(k - 1, 0, len(hw_fc) - 1)
+        point = np.clip(hw_fc[idx], 0.0, None)
+    else:
+        trend = seg["trend_intercept_at_end"] + seg["trend_slope"] * k
+        trend = np.clip(trend, 0.0, None)
+        dow_mult = np.array([seg["dow_factor"][d] for d in future_dates.dayofweek])
+        holiday_factor = seg.get("holiday_factor", 1.0)
+        holiday_mult = np.array([holiday_factor if is_holiday(d) else 1.0 for d in future_dates])
+        point = trend * dow_mult * holiday_mult  # shape (horizon_days,)
 
     residual_pool = seg["residual_pool"]
     inflation = seg.get("uncertainty_inflation", 1.0)
@@ -66,7 +83,7 @@ def forecast(
 
     for (channel, campaign_type), seg in segments.items():
         mult = float(budget_multipliers.get(channel, 1.0))
-        elasticity = seg["elasticity_beta"]
+        elasticity = seg.get("elasticity_beta_for_scenario", seg["elasticity_beta"])
         scenario_scale = mult ** elasticity if mult > 0 else 0.0
 
         for horizon in horizons:
@@ -89,6 +106,30 @@ def forecast(
 
             channel_sims.setdefault((channel, horizon), []).append((revenue_sim, spend_total))
             blended_sims.setdefault(horizon, []).append((revenue_sim, spend_total))
+
+    # Campaign-level rows are an additional, finer-grained breakdown of the same
+    # underlying data already counted at the campaign_type level above -- they
+    # are NOT folded into channel_sims/blended_sims (that would double-count).
+    for (channel, campaign_type, campaign_id), seg in model.get("campaign_segments", {}).items():
+        mult = float(budget_multipliers.get(channel, 1.0))
+        elasticity = seg.get("elasticity_beta_for_scenario", seg["elasticity_beta"])
+        scenario_scale = mult ** elasticity if mult > 0 else 0.0
+
+        for horizon in horizons:
+            daily = _simulate_segment_daily(seg, horizon, n_sims, rng)
+            revenue_sim = daily.sum(axis=1) * scenario_scale
+            spend_total = seg["avg_daily_spend"] * mult * horizon
+
+            rows.append({
+                "channel": channel, "campaign_type": campaign_type, "campaign_id": campaign_id,
+                "horizon_days": horizon, "metric": "revenue", **_percentiles(revenue_sim),
+            })
+            if spend_total > 0:
+                roas_sim = revenue_sim / spend_total
+                rows.append({
+                    "channel": channel, "campaign_type": campaign_type, "campaign_id": campaign_id,
+                    "horizon_days": horizon, "metric": "roas", **_percentiles(roas_sim),
+                })
 
     for (channel, horizon), pairs in channel_sims.items():
         revenue_sim = np.sum([p[0] for p in pairs], axis=0)

@@ -1,0 +1,838 @@
+{
+  "config": {
+    "test_horizon_days": 30,
+    "n_cutoffs": 3,
+    "min_train_days": 45,
+    "n_sims": 2000,
+    "seed": 42
+  },
+  "summary": {
+    "n_segments": 17,
+    "n_scored_cutoffs": 43,
+    "n_skipped_cutoffs": 8,
+    "overall_mape_pct": 80412.05,
+    "overall_median_ape_pct": 54.18,
+    "overall_mean_pinball_loss": 3585.81,
+    "p10_p90_coverage_pct": 37.2,
+    "nominal_coverage_pct": 80.0
+  },
+  "per_segment_summary": {
+    "bing/Search": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 167.24,
+      "coverage_pct": 0.0
+    },
+    "bing/PerformanceMax": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 54.55,
+      "coverage_pct": 33.3
+    },
+    "bing/Audience": {
+      "status": "insufficient_history"
+    },
+    "bing/Shopping": {
+      "status": "scored",
+      "n_cutoffs_scored": 1,
+      "mean_ape_pct": 100.0,
+      "coverage_pct": 0.0
+    },
+    "google/SEARCH": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 22.33,
+      "coverage_pct": 66.7
+    },
+    "google/PERFORMANCE_MAX": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 23.99,
+      "coverage_pct": 66.7
+    },
+    "google/DISPLAY": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 0.0,
+      "coverage_pct": 100.0
+    },
+    "google/VIDEO": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 2147.88,
+      "coverage_pct": 33.3
+    },
+    "google/DEMAND_GEN": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 84.49,
+      "coverage_pct": 0.0
+    },
+    "google/SHOPPING": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 39.05,
+      "coverage_pct": 33.3
+    },
+    "meta/Generic": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 33.33,
+      "coverage_pct": 66.7
+    },
+    "meta/Prospecting_DPA": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 489.94,
+      "coverage_pct": 0.0
+    },
+    "meta/Remarketing_DPA": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 302.55,
+      "coverage_pct": 0.0
+    },
+    "meta/Remarketing_Brand": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 1148656.55,
+      "coverage_pct": 33.3
+    },
+    "meta/Prospecting_Brand": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 44.66,
+      "coverage_pct": 66.7
+    },
+    "meta/Prospecting_Adv_Plus": {
+      "status": "insufficient_history"
+    },
+    "meta/Generic_Brand": {
+      "status": "scored",
+      "n_cutoffs_scored": 3,
+      "mean_ape_pct": 472.8,
+      "coverage_pct": 33.3
+    }
+  },
+  "detail": {
+    "bing/Search": [
+      {
+        "cutoff": "2026-03-07",
+        "skipped": false,
+        "actual": 187.06,
+        "p10": 251.0,
+        "p50": 903.22,
+        "p90": 1873.99,
+        "ape_pct": 382.85,
+        "pinball_loss": {
+          "p10": 57.55,
+          "p50": 358.08,
+          "p90": 168.69
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-04-06",
+        "skipped": false,
+        "actual": 3721.84,
+        "p10": 132.83,
+        "p50": 465.56,
+        "p90": 1159.84,
+        "ape_pct": 87.49,
+        "pinball_loss": {
+          "p10": 358.9,
+          "p50": 1628.14,
+          "p90": 2305.8
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-05-06",
+        "skipped": false,
+        "actual": 4783.72,
+        "p10": 2661.9,
+        "p50": 3282.7,
+        "p90": 4042.32,
+        "ape_pct": 31.38,
+        "pinball_loss": {
+          "p10": 212.18,
+          "p50": 750.51,
+          "p90": 667.26
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "bing/PerformanceMax": [
+      {
+        "cutoff": "2026-03-07",
+        "skipped": false,
+        "actual": 118.79,
+        "p10": 0.53,
+        "p50": 4.46,
+        "p90": 75.85,
+        "ape_pct": 96.25,
+        "pinball_loss": {
+          "p10": 11.83,
+          "p50": 57.17,
+          "p90": 38.64
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-04-06",
+        "skipped": false,
+        "actual": 582.26,
+        "p10": 208.72,
+        "p50": 256.74,
+        "p90": 367.03,
+        "ape_pct": 55.91,
+        "pinball_loss": {
+          "p10": 37.35,
+          "p50": 162.76,
+          "p90": 193.71
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-05-06",
+        "skipped": false,
+        "actual": 855.35,
+        "p10": 598.22,
+        "p50": 757.12,
+        "p90": 1014.25,
+        "ape_pct": 11.48,
+        "pinball_loss": {
+          "p10": 25.71,
+          "p50": 49.12,
+          "p90": 15.89
+        },
+        "covered_by_p10_p90": true
+      }
+    ],
+    "bing/Audience": [
+      {
+        "cutoff": "2025-12-10",
+        "skipped": true,
+        "reason": "insufficient history (0 train days, need >=45)"
+      },
+      {
+        "cutoff": "2026-01-09",
+        "skipped": true,
+        "reason": "insufficient history (0 train days, need >=45)"
+      },
+      {
+        "cutoff": "2026-02-08",
+        "skipped": true,
+        "reason": "insufficient history (24 train days, need >=45)"
+      }
+    ],
+    "bing/Shopping": [
+      {
+        "cutoff": "2026-03-07",
+        "skipped": true,
+        "reason": "insufficient history (5 train days, need >=45)"
+      },
+      {
+        "cutoff": "2026-04-06",
+        "skipped": true,
+        "reason": "insufficient history (35 train days, need >=45)"
+      },
+      {
+        "cutoff": "2026-05-06",
+        "skipped": false,
+        "actual": 465.57,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "ape_pct": 100.0,
+        "pinball_loss": {
+          "p10": 46.56,
+          "p50": 232.78,
+          "p90": 419.01
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "google/SEARCH": [
+      {
+        "cutoff": "2026-03-06",
+        "skipped": false,
+        "actual": 79628.96,
+        "p10": 36724.58,
+        "p50": 80114.21,
+        "p90": 160481.82,
+        "ape_pct": 0.61,
+        "pinball_loss": {
+          "p10": 4290.44,
+          "p50": 242.63,
+          "p90": 8085.29
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2026-04-05",
+        "skipped": false,
+        "actual": 97959.93,
+        "p10": 34352.39,
+        "p50": 60619.32,
+        "p90": 115953.97,
+        "ape_pct": 38.12,
+        "pinball_loss": {
+          "p10": 6360.75,
+          "p50": 18670.31,
+          "p90": 1799.4
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2026-05-05",
+        "skipped": false,
+        "actual": 82859.17,
+        "p10": 95581.7,
+        "p50": 106267.61,
+        "p90": 119194.65,
+        "ape_pct": 28.25,
+        "pinball_loss": {
+          "p10": 11450.28,
+          "p50": 11704.22,
+          "p90": 3633.55
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "google/PERFORMANCE_MAX": [
+      {
+        "cutoff": "2026-03-06",
+        "skipped": false,
+        "actual": 180762.39,
+        "p10": 89713.51,
+        "p50": 146837.54,
+        "p90": 218035.19,
+        "ape_pct": 18.77,
+        "pinball_loss": {
+          "p10": 9104.89,
+          "p50": 16962.43,
+          "p90": 3727.28
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2026-04-05",
+        "skipped": false,
+        "actual": 128152.08,
+        "p10": 57130.85,
+        "p50": 88400.22,
+        "p90": 143198.18,
+        "ape_pct": 31.02,
+        "pinball_loss": {
+          "p10": 7102.12,
+          "p50": 19875.93,
+          "p90": 1504.61
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2026-05-05",
+        "skipped": false,
+        "actual": 120539.29,
+        "p10": 123188.79,
+        "p50": 147258.43,
+        "p90": 174320.87,
+        "ape_pct": 22.17,
+        "pinball_loss": {
+          "p10": 2384.55,
+          "p50": 13359.57,
+          "p90": 5378.16
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "google/DISPLAY": [
+      {
+        "cutoff": "2024-05-30",
+        "skipped": false,
+        "actual": 0.0,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "ape_pct": 0.0,
+        "pinball_loss": {
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.0
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2024-06-29",
+        "skipped": false,
+        "actual": 0.0,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "ape_pct": 0.0,
+        "pinball_loss": {
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.0
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2024-07-29",
+        "skipped": false,
+        "actual": 0.0,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "ape_pct": 0.0,
+        "pinball_loss": {
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.0
+        },
+        "covered_by_p10_p90": true
+      }
+    ],
+    "google/VIDEO": [
+      {
+        "cutoff": "2025-10-25",
+        "skipped": false,
+        "actual": 0.0,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "ape_pct": 0.0,
+        "pinball_loss": {
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.0
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2025-11-24",
+        "skipped": false,
+        "actual": 67.99,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "ape_pct": 100.0,
+        "pinball_loss": {
+          "p10": 6.8,
+          "p50": 33.99,
+          "p90": 61.19
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2025-12-24",
+        "skipped": false,
+        "actual": 0.0,
+        "p10": 56.85,
+        "p50": 63.44,
+        "p90": 131.02,
+        "ape_pct": 6343.64,
+        "pinball_loss": {
+          "p10": 51.17,
+          "p50": 31.72,
+          "p90": 13.1
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "google/DEMAND_GEN": [
+      {
+        "cutoff": "2025-10-25",
+        "skipped": false,
+        "actual": 1399.2,
+        "p10": 1434.86,
+        "p50": 1962.19,
+        "p90": 2655.02,
+        "ape_pct": 40.24,
+        "pinball_loss": {
+          "p10": 32.09,
+          "p50": 281.49,
+          "p90": 125.58
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2025-11-24",
+        "skipped": false,
+        "actual": 3753.63,
+        "p10": 1161.67,
+        "p50": 1720.05,
+        "p90": 2401.49,
+        "ape_pct": 54.18,
+        "pinball_loss": {
+          "p10": 259.2,
+          "p50": 1016.79,
+          "p90": 1216.92
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2025-12-24",
+        "skipped": false,
+        "actual": 1235.97,
+        "p10": 2445.46,
+        "p50": 3201.91,
+        "p90": 4166.27,
+        "ape_pct": 159.06,
+        "pinball_loss": {
+          "p10": 1088.54,
+          "p50": 982.97,
+          "p90": 293.03
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "google/SHOPPING": [
+      {
+        "cutoff": "2026-03-06",
+        "skipped": false,
+        "actual": 53117.24,
+        "p10": 33969.19,
+        "p50": 77730.61,
+        "p90": 145847.39,
+        "ape_pct": 46.34,
+        "pinball_loss": {
+          "p10": 1914.8,
+          "p50": 12306.69,
+          "p90": 9273.02
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2026-04-05",
+        "skipped": false,
+        "actual": 109910.03,
+        "p10": 30869.97,
+        "p50": 53431.51,
+        "p90": 81294.4,
+        "ape_pct": 51.39,
+        "pinball_loss": {
+          "p10": 7904.01,
+          "p50": 28239.26,
+          "p90": 25754.06
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-05-05",
+        "skipped": false,
+        "actual": 99978.38,
+        "p10": 105990.77,
+        "p50": 119385.75,
+        "p90": 134038.22,
+        "ape_pct": 19.41,
+        "pinball_loss": {
+          "p10": 5411.15,
+          "p50": 9703.68,
+          "p90": 3405.98
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "meta/Generic": [
+      {
+        "cutoff": "2024-11-05",
+        "skipped": false,
+        "actual": 0.0,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "ape_pct": 0.0,
+        "pinball_loss": {
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.0
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2024-12-05",
+        "skipped": false,
+        "actual": 0.0,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "ape_pct": 0.0,
+        "pinball_loss": {
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.0
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2025-01-04",
+        "skipped": false,
+        "actual": 4019.55,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "ape_pct": 100.0,
+        "pinball_loss": {
+          "p10": 401.96,
+          "p50": 2009.78,
+          "p90": 3617.6
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "meta/Prospecting_DPA": [
+      {
+        "cutoff": "2025-10-27",
+        "skipped": false,
+        "actual": 10572.01,
+        "p10": 1042.08,
+        "p50": 1962.66,
+        "p90": 3398.57,
+        "ape_pct": 81.44,
+        "pinball_loss": {
+          "p10": 952.99,
+          "p50": 4304.67,
+          "p90": 6456.1
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2025-11-26",
+        "skipped": false,
+        "actual": 30434.51,
+        "p10": 9259.64,
+        "p50": 10979.13,
+        "p90": 13078.33,
+        "ape_pct": 63.93,
+        "pinball_loss": {
+          "p10": 2117.49,
+          "p50": 9727.69,
+          "p90": 15620.56
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2025-12-26",
+        "skipped": false,
+        "actual": 2339.0,
+        "p10": 29682.54,
+        "p50": 33317.84,
+        "p90": 37183.97,
+        "ape_pct": 1324.45,
+        "pinball_loss": {
+          "p10": 24609.18,
+          "p50": 15489.42,
+          "p90": 3484.5
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "meta/Remarketing_DPA": [
+      {
+        "cutoff": "2026-03-07",
+        "skipped": false,
+        "actual": 2552.8,
+        "p10": 7627.1,
+        "p50": 20024.29,
+        "p90": 38811.08,
+        "ape_pct": 684.41,
+        "pinball_loss": {
+          "p10": 4566.87,
+          "p50": 8735.75,
+          "p90": 3625.83
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-04-06",
+        "skipped": false,
+        "actual": 7339.7,
+        "p10": 8327.23,
+        "p50": 19043.94,
+        "p90": 36145.62,
+        "ape_pct": 159.46,
+        "pinball_loss": {
+          "p10": 888.78,
+          "p50": 5852.12,
+          "p90": 2880.59
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-05-06",
+        "skipped": false,
+        "actual": 18095.44,
+        "p10": 4470.58,
+        "p50": 6555.34,
+        "p90": 10325.48,
+        "ape_pct": 63.77,
+        "pinball_loss": {
+          "p10": 1362.49,
+          "p50": 5770.05,
+          "p90": 6992.96
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "meta/Remarketing_Brand": [
+      {
+        "cutoff": "2026-03-07",
+        "skipped": false,
+        "actual": 0.0,
+        "p10": 1943.4,
+        "p50": 16928.68,
+        "p90": 47618.04,
+        "ape_pct": 1692868.03,
+        "pinball_loss": {
+          "p10": 1749.06,
+          "p50": 8464.34,
+          "p90": 4761.8
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-04-06",
+        "skipped": false,
+        "actual": 0.0,
+        "p10": 5431.43,
+        "p50": 17530.55,
+        "p90": 46233.39,
+        "ape_pct": 1753054.62,
+        "pinball_loss": {
+          "p10": 4888.28,
+          "p50": 8765.27,
+          "p90": 4623.34
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-05-06",
+        "skipped": false,
+        "actual": 1820.39,
+        "p10": 345.22,
+        "p50": 964.73,
+        "p90": 1956.53,
+        "ape_pct": 47.0,
+        "pinball_loss": {
+          "p10": 147.52,
+          "p50": 427.83,
+          "p90": 13.61
+        },
+        "covered_by_p10_p90": true
+      }
+    ],
+    "meta/Prospecting_Brand": [
+      {
+        "cutoff": "2026-03-07",
+        "skipped": false,
+        "actual": 39302.47,
+        "p10": 28370.82,
+        "p50": 51202.91,
+        "p90": 87495.73,
+        "ape_pct": 30.28,
+        "pinball_loss": {
+          "p10": 1093.16,
+          "p50": 5950.22,
+          "p90": 4819.33
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2026-04-06",
+        "skipped": false,
+        "actual": 25636.48,
+        "p10": 17660.57,
+        "p50": 36759.08,
+        "p90": 69516.82,
+        "ape_pct": 43.39,
+        "pinball_loss": {
+          "p10": 797.59,
+          "p50": 5561.3,
+          "p90": 4388.03
+        },
+        "covered_by_p10_p90": true
+      },
+      {
+        "cutoff": "2026-05-06",
+        "skipped": false,
+        "actual": 23482.26,
+        "p10": 24597.97,
+        "p50": 37646.14,
+        "p90": 54151.87,
+        "ape_pct": 60.32,
+        "pinball_loss": {
+          "p10": 1004.14,
+          "p50": 7081.94,
+          "p90": 3066.96
+        },
+        "covered_by_p10_p90": false
+      }
+    ],
+    "meta/Prospecting_Adv_Plus": [
+      {
+        "cutoff": "2025-02-21",
+        "skipped": true,
+        "reason": "insufficient history (0 train days, need >=45)"
+      },
+      {
+        "cutoff": "2025-03-23",
+        "skipped": true,
+        "reason": "insufficient history (0 train days, need >=45)"
+      },
+      {
+        "cutoff": "2025-04-22",
+        "skipped": true,
+        "reason": "insufficient history (0 train days, need >=45)"
+      }
+    ],
+    "meta/Generic_Brand": [
+      {
+        "cutoff": "2025-12-06",
+        "skipped": false,
+        "actual": 542.59,
+        "p10": 1030.38,
+        "p50": 1294.24,
+        "p90": 1836.43,
+        "ape_pct": 138.53,
+        "pinball_loss": {
+          "p10": 439.01,
+          "p50": 375.83,
+          "p90": 129.38
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-01-05",
+        "skipped": false,
+        "actual": 83.73,
+        "p10": 789.18,
+        "p50": 1108.48,
+        "p90": 1796.65,
+        "ape_pct": 1223.88,
+        "pinball_loss": {
+          "p10": 634.91,
+          "p50": 512.38,
+          "p90": 171.29
+        },
+        "covered_by_p10_p90": false
+      },
+      {
+        "cutoff": "2026-02-04",
+        "skipped": false,
+        "actual": 1059.55,
+        "p10": 157.66,
+        "p50": 466.24,
+        "p90": 1128.51,
+        "ape_pct": 56.0,
+        "pinball_loss": {
+          "p10": 90.19,
+          "p50": 296.66,
+          "p90": 6.9
+        },
+        "covered_by_p10_p90": true
+      }
+    ]
+  }
+}
