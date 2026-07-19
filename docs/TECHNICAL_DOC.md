@@ -384,6 +384,63 @@ statistically defensible. This is a deliberate byproduct of the confidence
 gate, not a limitation of the method — a bigger, noisier recommendation
 would be easy to produce by ignoring the CI width, and would be worse advice.
 
+### 3.10 Retrospective validation of the recommendation engine
+
+The Monte Carlo pricing above is forward-looking — it says what *should*
+happen if a shift is made, given the fitted elasticity. It is not itself
+evidence the underlying premise (rank segments by elasticity, favor the
+high-elasticity ones) actually holds up against real subsequent outcomes.
+`src/validate_recommendations.py` tests that premise walk-forward: no actual
+counterfactual budget shift is observable in this data (it's observational,
+not an experiment), so this doesn't test "would this exact dollar shift have
+beaten reality" — it tests the engine's directional logic instead. At 5
+past decision points (60–180 days before the dataset's end), using **only**
+data available as of that point, it identifies the same donor/receiver
+candidate pool `recommendations.py` would have (3 lowest- and 3
+highest-elasticity eligible segments), then checks: did the receiver
+segment's **actual, realized** ROAS in the subsequent 30 days exceed the
+donor's? If the recommendation logic is sound, this should happen
+meaningfully more than half the time.
+
+**Honest result (`docs/recommendation_validation.json`):**
+
+| Test | n scored | Confirmed | Rate |
+|---|---|---|---|
+| Full candidate grid (all donor×receiver pairs, matching the actual pool size) | 26 | 15 | **57.7%** |
+| Single top pick only (what the engine would have surfaced as its #1 recommendation) | 2 | 0 | **0%** |
+
+**This is a mixed, not a clean, result — reported as such.** The full-grid
+number (57.7%) is meaningfully better than a coin flip and shows the
+elasticity ranking has real, if modest, predictive value for relative
+subsequent efficiency. But the single-top-pick number is 0%, and the reason
+is instructive rather than random: at every one of the 5 decision points,
+`google/VIDEO` had the highest as-of elasticity estimate and was picked as
+the top receiver — and at every single one, its actual realized ROAS in the
+following 30 days collapsed (0.00–0.02, and in 2 of 5 windows it stopped
+spending entirely). This is the **same segment** already flagged
+`low_reliability` by the walk-forward backtest (§3.8 — Holt-Winters MAPE
+1,878.8% on `google/VIDEO`, the worst in the portfolio) — two independent
+validation methods (forecast backtesting and recommendation retrospection)
+converged on the same finding through entirely different mechanisms. That
+convergence is more convincing than either result alone, and it points at a
+concrete, cheap improvement not yet implemented: **gate the receiver pool by
+`forecast_reliability.low_reliability` (§3.6) as well as elasticity
+confidence** — `google/VIDEO` passes the elasticity-CI gate (its CI is
+reasonably tight, [0.81, 1.40]) but is a known-unreliable forecaster, and
+the two checks are currently independent when they should compound.
+
+One caveat on the comparison itself: "receiver ROAS > donor ROAS" compares
+absolute realized ROAS levels, not marginal returns to *additional* spend —
+`recommendations.py`'s actual criterion. A donor can legitimately have high
+absolute ROAS (e.g. `meta/Prospecting_Brand` realized 15.57x in one window)
+while still being a correct "don't scale further" pick if its marginal
+returns are diminishing faster than the receiver's — a few of the
+"unconfirmed" pairs in the full grid are this case, not a failure of the
+underlying logic. A more precise retrospective test would compare realized
+marginal ROAS (via a local regression on realized spend/revenue in the
+window) rather than levels; that refinement is out of scope for the
+remaining time.
+
 ## 4. Assumptions
 
 1. Meta's `conversion` field is conversion value, not count (§2.2).

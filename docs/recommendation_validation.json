@@ -1,0 +1,564 @@
+{
+  "config": {
+    "test_horizon_days": 30,
+    "cutoff_offsets_days": [
+      180,
+      150,
+      120,
+      90,
+      60
+    ],
+    "min_train_days": 90,
+    "candidate_pool_size": 3
+  },
+  "summary": {
+    "n_cutoffs_tested": 5,
+    "full_candidate_grid": {
+      "n_pairs_scored": 26,
+      "n_confirmed": 15,
+      "confirmation_rate_pct": 57.7
+    },
+    "top_pick_only": {
+      "n_scored": 2,
+      "n_confirmed": 0,
+      "confirmation_rate_pct": 0.0
+    }
+  },
+  "detail": [
+    {
+      "cutoff": "2025-12-07",
+      "skipped": false,
+      "window_days": 30,
+      "n_eligible_segments": 10,
+      "pairs": [
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.09,
+          "donor_realized_roas": 2.34,
+          "receiver_realized_roas": 0.02,
+          "donor_realized_spend": 891.01,
+          "receiver_realized_spend": 2999.27,
+          "recommendation_confirmed": false
+        },
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.89,
+          "donor_realized_roas": 2.34,
+          "receiver_realized_roas": 6.33,
+          "donor_realized_spend": 891.01,
+          "receiver_realized_spend": 56639.02,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "google/PERFORMANCE_MAX",
+          "receiver_asof_elasticity": 0.85,
+          "donor_realized_roas": 2.34,
+          "receiver_realized_roas": 5.26,
+          "donor_realized_spend": 891.01,
+          "receiver_realized_spend": 71869.83,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.26,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.09,
+          "donor_realized_roas": 1.1,
+          "receiver_realized_roas": 0.02,
+          "donor_realized_spend": 1983.15,
+          "receiver_realized_spend": 2999.27,
+          "recommendation_confirmed": false
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.26,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.89,
+          "donor_realized_roas": 1.1,
+          "receiver_realized_roas": 6.33,
+          "donor_realized_spend": 1983.15,
+          "receiver_realized_spend": 56639.02,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.26,
+          "receiver": "google/PERFORMANCE_MAX",
+          "receiver_asof_elasticity": 0.85,
+          "donor_realized_roas": 1.1,
+          "receiver_realized_roas": 5.26,
+          "donor_realized_spend": 1983.15,
+          "receiver_realized_spend": 71869.83,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "meta/Prospecting_Brand",
+          "donor_asof_elasticity": 0.67,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.09,
+          "donor_realized_roas": 15.57,
+          "receiver_realized_roas": 0.02,
+          "donor_realized_spend": 8224.79,
+          "receiver_realized_spend": 2999.27,
+          "recommendation_confirmed": false
+        },
+        {
+          "donor": "meta/Prospecting_Brand",
+          "donor_asof_elasticity": 0.67,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.89,
+          "donor_realized_roas": 15.57,
+          "receiver_realized_roas": 6.33,
+          "donor_realized_spend": 8224.79,
+          "receiver_realized_spend": 56639.02,
+          "recommendation_confirmed": false
+        },
+        {
+          "donor": "meta/Prospecting_Brand",
+          "donor_asof_elasticity": 0.67,
+          "receiver": "google/PERFORMANCE_MAX",
+          "receiver_asof_elasticity": 0.85,
+          "donor_realized_roas": 15.57,
+          "receiver_realized_roas": 5.26,
+          "donor_realized_spend": 8224.79,
+          "receiver_realized_spend": 71869.83,
+          "recommendation_confirmed": false
+        }
+      ]
+    },
+    {
+      "cutoff": "2026-01-06",
+      "skipped": false,
+      "window_days": 30,
+      "n_eligible_segments": 11,
+      "pairs": [
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.2,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": 2.11,
+          "receiver_realized_roas": 0.0,
+          "donor_realized_spend": 229.27,
+          "receiver_realized_spend": 911.1,
+          "recommendation_confirmed": false
+        },
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.2,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.9,
+          "donor_realized_roas": 2.11,
+          "receiver_realized_roas": 6.11,
+          "donor_realized_spend": 229.27,
+          "receiver_realized_spend": 5652.01,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.2,
+          "receiver": "google/PERFORMANCE_MAX",
+          "receiver_asof_elasticity": 0.82,
+          "donor_realized_roas": 2.11,
+          "receiver_realized_roas": 5.69,
+          "donor_realized_spend": 229.27,
+          "receiver_realized_spend": 16281.38,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.31,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": 0.4,
+          "receiver_realized_roas": 0.0,
+          "donor_realized_spend": 392.32,
+          "receiver_realized_spend": 911.1,
+          "recommendation_confirmed": false
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.31,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.9,
+          "donor_realized_roas": 0.4,
+          "receiver_realized_roas": 6.11,
+          "donor_realized_spend": 392.32,
+          "receiver_realized_spend": 5652.01,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.31,
+          "receiver": "google/PERFORMANCE_MAX",
+          "receiver_asof_elasticity": 0.82,
+          "donor_realized_roas": 0.4,
+          "receiver_realized_roas": 5.69,
+          "donor_realized_spend": 392.32,
+          "receiver_realized_spend": 16281.38,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.33,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": 1.26,
+          "receiver_realized_roas": 0.0,
+          "donor_realized_spend": 560.97,
+          "receiver_realized_spend": 911.1,
+          "recommendation_confirmed": false
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.33,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.9,
+          "donor_realized_roas": 1.26,
+          "receiver_realized_roas": 6.11,
+          "donor_realized_spend": 560.97,
+          "receiver_realized_spend": 5652.01,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.33,
+          "receiver": "google/PERFORMANCE_MAX",
+          "receiver_asof_elasticity": 0.82,
+          "donor_realized_roas": 1.26,
+          "receiver_realized_roas": 5.69,
+          "donor_realized_spend": 560.97,
+          "receiver_realized_spend": 16281.38,
+          "recommendation_confirmed": true
+        }
+      ]
+    },
+    {
+      "cutoff": "2026-02-05",
+      "skipped": false,
+      "window_days": 30,
+      "n_eligible_segments": 11,
+      "pairs": [
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.2,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": 0.13,
+          "receiver_realized_roas": null,
+          "donor_realized_spend": 292.98,
+          "receiver_realized_spend": 0.0,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.2,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.87,
+          "donor_realized_roas": 0.13,
+          "receiver_realized_roas": 5.15,
+          "donor_realized_spend": 292.98,
+          "receiver_realized_spend": 8730.03,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.2,
+          "receiver": "meta/Remarketing_DPA",
+          "receiver_asof_elasticity": 0.79,
+          "donor_realized_roas": 0.13,
+          "receiver_realized_roas": 7.45,
+          "donor_realized_spend": 292.98,
+          "receiver_realized_spend": 371.11,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.3,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": 0.41,
+          "receiver_realized_roas": null,
+          "donor_realized_spend": 2382.44,
+          "receiver_realized_spend": 0.0,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.3,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.87,
+          "donor_realized_roas": 0.41,
+          "receiver_realized_roas": 5.15,
+          "donor_realized_spend": 2382.44,
+          "receiver_realized_spend": 8730.03,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.3,
+          "receiver": "meta/Remarketing_DPA",
+          "receiver_asof_elasticity": 0.79,
+          "donor_realized_roas": 0.41,
+          "receiver_realized_roas": 7.45,
+          "donor_realized_spend": 2382.44,
+          "receiver_realized_spend": 371.11,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.34,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": null,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 0.0,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.34,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.87,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 5.15,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 8730.03,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.34,
+          "receiver": "meta/Remarketing_DPA",
+          "receiver_asof_elasticity": 0.79,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 7.45,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 371.11,
+          "recommendation_confirmed": null
+        }
+      ]
+    },
+    {
+      "cutoff": "2026-03-07",
+      "skipped": false,
+      "window_days": 30,
+      "n_eligible_segments": 11,
+      "pairs": [
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": 3.37,
+          "receiver_realized_roas": null,
+          "donor_realized_spend": 55.58,
+          "receiver_realized_spend": 0.0,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.85,
+          "donor_realized_roas": 3.37,
+          "receiver_realized_roas": 7.53,
+          "donor_realized_spend": 55.58,
+          "receiver_realized_spend": 10560.13,
+          "recommendation_confirmed": true
+        },
+        {
+          "donor": "bing/Search",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "meta/Remarketing_DPA",
+          "receiver_asof_elasticity": 0.79,
+          "donor_realized_roas": 3.37,
+          "receiver_realized_roas": 3.29,
+          "donor_realized_spend": 55.58,
+          "receiver_realized_spend": 774.98,
+          "recommendation_confirmed": false
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": null,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 0.0,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.85,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 7.53,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 10560.13,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "meta/Remarketing_DPA",
+          "receiver_asof_elasticity": 0.79,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 3.29,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 774.98,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.34,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": null,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 0.0,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.34,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.85,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 7.53,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 10560.13,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.34,
+          "receiver": "meta/Remarketing_DPA",
+          "receiver_asof_elasticity": 0.79,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 3.29,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 774.98,
+          "recommendation_confirmed": null
+        }
+      ]
+    },
+    {
+      "cutoff": "2026-04-06",
+      "skipped": false,
+      "window_days": 30,
+      "n_eligible_segments": 10,
+      "pairs": [
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": null,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 0.0,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.85,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 6.86,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 14035.01,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "meta/Generic_Brand",
+          "donor_asof_elasticity": 0.21,
+          "receiver": "meta/Remarketing_DPA",
+          "receiver_asof_elasticity": 0.81,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 5.62,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 1305.08,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.34,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": null,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 0.0,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.34,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.85,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 6.86,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 14035.01,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/DEMAND_GEN",
+          "donor_asof_elasticity": 0.34,
+          "receiver": "meta/Remarketing_DPA",
+          "receiver_asof_elasticity": 0.81,
+          "donor_realized_roas": null,
+          "receiver_realized_roas": 5.62,
+          "donor_realized_spend": 0.0,
+          "receiver_realized_spend": 1305.08,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/SHOPPING",
+          "donor_asof_elasticity": 0.56,
+          "receiver": "google/VIDEO",
+          "receiver_asof_elasticity": 1.1,
+          "donor_realized_roas": 7.04,
+          "receiver_realized_roas": null,
+          "donor_realized_spend": 16096.71,
+          "receiver_realized_spend": 0.0,
+          "recommendation_confirmed": null
+        },
+        {
+          "donor": "google/SHOPPING",
+          "donor_asof_elasticity": 0.56,
+          "receiver": "google/SEARCH",
+          "receiver_asof_elasticity": 0.85,
+          "donor_realized_roas": 7.04,
+          "receiver_realized_roas": 6.86,
+          "donor_realized_spend": 16096.71,
+          "receiver_realized_spend": 14035.01,
+          "recommendation_confirmed": false
+        },
+        {
+          "donor": "google/SHOPPING",
+          "donor_asof_elasticity": 0.56,
+          "receiver": "meta/Remarketing_DPA",
+          "receiver_asof_elasticity": 0.81,
+          "donor_realized_roas": 7.04,
+          "receiver_realized_roas": 5.62,
+          "donor_realized_spend": 16096.71,
+          "receiver_realized_spend": 1305.08,
+          "recommendation_confirmed": false
+        }
+      ]
+    }
+  ]
+}
