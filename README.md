@@ -53,6 +53,10 @@ aignition-forecast/
 ├── src/
 │   ├── generate_features.py  # ingest + normalize the 3 channel CSVs
 │   ├── train.py               # fits pickle/model.pkl — NOT called by run.sh
+│   │                          #   (method selection, holiday/clipping, elasticity CI,
+│   │                          #    per-segment calibration, campaign-level fitting)
+│   ├── backtest_core.py       # shared walk-forward evaluation core (used by train.py + backtest.py)
+│   ├── backtest.py            # standalone empirical-vs-Holt-Winters backtest CLI (offline tool)
 │   ├── forecasting.py         # Monte Carlo aggregation + budget elasticity (shared by predict.py and api.py)
 │   ├── predict.py             # run.sh's second step: loads model, writes predictions.csv
 │   ├── llm_summary.py         # Claude-assisted causal narrative (demo layer only)
@@ -60,8 +64,11 @@ aignition-forecast/
 ├── app_streamlit.py           # Streamlit demo UI (demo layer only)
 ├── output/predictions.csv     # generated fresh each run.sh invocation
 └── docs/
-    ├── TECHNICAL_DOC.md        # methodology, assumptions, limitations, AI strategy
-    └── ARCHITECTURE.md         # frontend/backend/pipeline/LLM workflow
+    ├── TECHNICAL_DOC.md               # methodology, backtest results, assumptions, limitations, AI strategy
+    ├── ARCHITECTURE.md                # frontend/backend/pipeline/LLM workflow
+    ├── backtest_results_baseline.json # pre-Step-2 walk-forward backtest (single method)
+    ├── backtest_results.json          # empirical-vs-Holt-Winters method comparison
+    └── backtest_results_post_fix.json # post-fix (winning method + calibration) walk-forward results
 ```
 
 ## Data & model contract

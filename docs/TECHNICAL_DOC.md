@@ -66,42 +66,83 @@ a useful, low-cost segment for downstream analysis.
 
 ## 3. Forecasting methodology
 
-### 3.1 Why not Prophet / ARIMA
+### 3.1 Two candidate methods, chosen per segment by backtest — not by assumption
 
 At the (channel × campaign_type) daily grain, several of the 17 segments are
 sparse and zero-inflated (e.g. `bing/Audience` has 54 observed days, several
-with zero spend). MLE-based seasonal models (Prophet, SARIMAX/Holt-Winters)
-are numerically unstable on series like this within a hackathon timeframe —
-convergence warnings, degenerate seasonal components. Given the time
-constraint, robustness was prioritized over model sophistication.
+with zero spend), where MLE-based seasonal models can be numerically
+unstable. Rather than assume one method wins everywhere, **both** a
+lightweight custom decomposition ("empirical") and statsmodels' Holt-Winters
+("holt_winters", additive trend + weekly seasonal) are fit and
+walk-forward-backtested per segment (`src/backtest.py`,
+`docs/backtest_results.json`), and the lower-pinball-loss method is kept
+(`src/train.py::select_method`). Final tally on this dataset: **9 segments
+picked empirical, 6 picked Holt-Winters, 2 had too little history to
+backtest** (defaulted to empirical). This isn't a coin flip — on
+`google/VIDEO`, empirical's backtested MAPE was 140,512% vs. Holt-Winters'
+1,892% (still bad, but 74x better); on `google/SEARCH`, pinball loss dropped
+from 26,943 to 8,701. Picking per-segment rather than globally captured real,
+measured gains that a single blanket choice would have missed.
 
-### 3.2 Model: trend + day-of-week seasonality + empirical residual bootstrap
+### 3.2 Method 1: trend + day-of-week + holiday seasonality, empirical residual bootstrap
 
-Per (channel, campaign_type) segment (`src/train.py`):
+Per (channel, campaign_type) segment (`src/train.py::fit_trend_seasonal`):
 
 1. Aggregate to a daily series over the segment's full observed date range
    (missing days filled with 0 revenue/spend — a campaign that didn't run
    that day, not missing data).
-2. Fit a linear trend (`numpy.polyfit`, degree 1) over the trailing 120 days
-   (or all available days if fewer).
-3. Compute a day-of-week seasonal multiplier as `mean(revenue | dow) /
+2. Clip revenue at the segment's 97th percentile before fitting (prevents a
+   single extreme day — e.g. a Black Friday spike — from dominating the
+   trend line; ported from a prior exploration of this same dataset that
+   independently found the same Black Friday sensitivity, see §3.1 of the
+   inventory note in project history).
+3. Fit a linear trend (`numpy.polyfit`, degree 1) on the clipped series over
+   the trailing 120 days (or all available days if fewer).
+4. Compute a day-of-week seasonal multiplier as `mean(revenue | dow) /
    mean(revenue)` over the segment's full history.
-4. Compute in-sample residuals (`actual − trend×seasonal`) over the trend
-   window; store the residual array as an empirical noise pool.
-5. Fit a log-log spend→revenue elasticity (`log(revenue) = α + β·log(spend)`
-   via OLS on days with spend>0 and revenue>0), clipped to `[0, 2]`. Segments
-   with <10 qualifying days fall back to `β=1.0` (linear pass-through, flagged
-   as low-confidence downstream).
+5. Compute a **holiday-window multiplier** the same way, for Nov 20–Dec 31
+   (Black Friday/Cyber Monday through year-end) vs. the rest of the year —
+   added after finding a verified +5.1σ Black Friday 2024 spike on Google in
+   this dataset (§3.6 has the finding detail). Segments with no holiday-window
+   history default to 1.0 rather than guessing.
+6. Compute in-sample residuals against `trend × dow × holiday` (using the
+   **unclipped** actuals, so residual noise reflects real variance, not
+   clipped-away variance); store as an empirical noise pool.
 
-Forecasting (`src/forecasting.py`) is Monte Carlo, not closed-form: for each
-future day in the horizon, draw `point = trend(day) × seasonal(day)` and add
-a residual **bootstrapped with replacement from that segment's empirical
-residual pool** (not assumed Gaussian — this handles the zero-inflation and
-skew directly from the observed data). 2,000 simulated paths per segment per
-horizon; daily values are summed across the horizon and across segments
-(assuming independence — see Limitations), then P10/P50/P90 are taken from
-the resulting distribution. `numpy.random.default_rng(seed=42)` is seeded
-throughout for reproducibility.
+### 3.3 Method 2: Holt-Winters (statsmodels)
+
+Per segment (`src/train.py::fit_holt_winters`): fit
+`ExponentialSmoothing(trend="add", seasonal="add", seasonal_periods=7)` on
+the same clipped daily series, take its native multi-step `.forecast(120)`
+directly as the point path (no separate trend/dow decomposition — Holt-Winters'
+own seasonal component handles day-of-week), and use in-sample residuals
+(`actual − fitted.fittedvalues`) as its own empirical noise pool. This is a
+genuinely different mechanism from Method 1, not a variant of it — that's
+what makes the comparison in §3.1 meaningful rather than circular.
+
+### 3.4 Elasticity, with a bootstrap confidence interval
+
+Fit a log-log spend→revenue elasticity (`log(revenue) = α + β·log(spend)`
+via OLS on days with spend>0 and revenue>0), clipped to `[0, 2]`
+(`src/train.py::fit_elasticity`). A 10th/90th-percentile **bootstrap
+confidence interval** on β (500 resamples with replacement) is computed
+alongside the point estimate. Budget-scenario scaling (§3.5) uses β **only**
+when `n_obs ≥ 10` **and** the CI width is ≤1.0 — otherwise it falls back to
+β=1.0 (linear pass-through) for the scaling math specifically, while still
+reporting the raw fitted β and its CI for transparency. Example: `google/SEARCH`
+has β=0.85, CI=[0.81, 0.89] (tight, used as-is); `meta/Generic` has β=1.33,
+CI=[0.19, 1.89] (width 1.70 — too wide to trust, scenario math falls back to
+β=1.0 even though the point estimate is reported).
+
+Forecasting (`src/forecasting.py`) is Monte Carlo, not closed-form, for
+**both** methods: for each future day in the horizon, take the method's point
+forecast and add a residual **bootstrapped with replacement from that
+segment's own empirical residual pool** (not assumed Gaussian — this handles
+the zero-inflation and skew directly from the observed data). 2,000 simulated
+paths per segment per horizon; daily values are summed across the horizon and
+across segments (assuming independence — see Limitations), then P10/P50/P90
+are taken from the resulting distribution. `numpy.random.default_rng(seed=42)`
+is seeded throughout for reproducibility.
 
 **Uncertainty inflation:** Meta's residual bootstrap noise is scaled ×1.3
 relative to Bing/Google. Even though §2.2 treats Meta's field as measured
@@ -111,7 +152,7 @@ retire this) — the inflation factor keeps that risk visible in Meta's
 forecast intervals rather than hiding it behind a point estimate with the
 same confidence as Bing/Google's directly-labeled revenue.
 
-### 3.3 Budget scenario simulation
+### 3.5 Budget scenario simulation
 
 A per-channel budget multiplier (default 1.0 = "continue current run-rate")
 scales the segment's simulated revenue by `multiplier ** elasticity_beta`
@@ -124,24 +165,33 @@ default multiplier (1.0, i.e. baseline/no scenario) — the interactive
 what-if capability is exposed through `src/api.py` / `app_streamlit.py`
 only, per the no-network-in-run.sh constraint below.
 
-### 3.4 Aggregation levels
+### 3.6 Aggregation levels
 
 `forecast()` returns rows for: each (channel, campaign_type) segment, each
-channel rollup (sum across that channel's segments), and the blended total
-(sum across all channels) — for each horizon × metric (`revenue`, `roas`).
-Segments are summed elementwise per Monte Carlo draw, so the resulting
+individual **campaign** (real Monte Carlo forecasts, not a fixed
+percentage band — see §3.8), each channel rollup (sum across that channel's
+campaign_type segments), and the blended total (sum across all channels) —
+for each horizon × metric (`revenue`, `roas`). Campaign-type and channel/blended
+rollups are summed elementwise per Monte Carlo draw, so the resulting
 distributions properly propagate uncertainty rather than just summing point
-estimates.
+estimates. Individual campaign rows are a separate, finer-grained breakdown
+of the same underlying data already counted at the campaign_type level —
+they are not additionally folded into the channel/blended totals, which
+would double-count revenue.
 
-### 3.5 Backtest & calibration results (initial, pre-improvement)
+### 3.7 Backtest & calibration results — initial baseline (pre-Step-2)
 
 `src/backtest.py` walk-forward validates every segment: 3 non-overlapping
 30-day test windows tiled across the last 90 days, each refit using **only**
 data available before that window's cutoff (no leakage), scored against the
 actual held-out revenue. Segments with <45 days of training history before a
 cutoff are skipped rather than scored on too little data (`bing/Audience`,
-`meta/Prospecting_Adv_Plus`). This is run once offline (not part of `run.sh`)
-and the raw results are committed at `docs/backtest_results.json`.
+`meta/Prospecting_Adv_Plus`). This is run once offline (not part of `run.sh`).
+The numbers below are the **original, single-method (empirical-only, no
+holiday factor, no clipping, no calibration)** snapshot, preserved at
+`docs/backtest_results_baseline.json` for comparison against the post-fix
+results in §3.8 — `docs/backtest_results.json` itself now holds the
+empirical-vs-Holt-Winters method comparison described in §3.1.
 
 **Aggregate, across 43 scored (segment × cutoff) pairs:**
 
@@ -156,7 +206,7 @@ materially **overconfident** — its 80% nominal interval only actually
 contains the true value 37.2% of the time, well short of target. Reporting
 this rather than only the "intervals exist" claim is the actual evidence for
 "appropriate handling of uncertainty" that the brief's evaluation criteria
-ask for. Per-segment detail (`docs/backtest_results.json`):
+ask for. Per-segment detail (`docs/backtest_results_baseline.json`):
 
 | Segment | Mean APE | Coverage |
 |---|---|---|
@@ -180,10 +230,70 @@ Low-volume, spiky segments (VIDEO, Generic_Brand, Prospecting/Remarketing DPA)
 are the worst offenders — small absolute revenue means small absolute misses
 translate into huge percentage errors, and the 120-day trailing-window trend
 extrapolates recent noise further than in-sample residual variance accounts
-for. §3.6 below documents what was changed in response to these numbers, and
+for. §3.8 below documents what was changed in response to these numbers, and
 the same table is reproduced there with post-fix results for direct
 comparison — this is not a one-off measurement, it's the mechanism that
 drove the modeling changes in the rest of this document.
+
+### 3.8 Backtest & calibration results — after method selection + calibration fix
+
+Three changes were made directly in response to §3.7's numbers, all
+validated by re-running the identical walk-forward backtest:
+
+1. **Per-segment method selection** (§3.1): empirical vs. Holt-Winters,
+   picked by backtest pinball loss. 9 segments kept empirical, 6 switched to
+   Holt-Winters, 2 defaulted (insufficient history to backtest either).
+2. **97th-percentile clipping + holiday-window seasonality** (§3.2): reduces
+   the influence of extreme single-day spikes on the trend fit.
+3. **Per-segment calibration-scale search**: a global residual-noise
+   multiplier was tried first and plateaued around 53% aggregate coverage
+   (and got *worse* past 4x — a single multiplier can't fit segments that
+   need very different amounts of widening). Switched to searching each
+   segment's own multiplier against its own walk-forward coverage
+   (`src/train.py::search_calibration_scale`, grid `[1.0, 1.5, 2.0, 2.5, 3.0,
+   4.0, 5.0]`, picks the smallest scale reaching ≥2-of-3 covered cutoffs).
+
+**Aggregate, across the same 43 scored pairs (`docs/backtest_results_post_fix.json`):**
+
+| Metric | Baseline (§3.7) | Post-fix | Change |
+|---|---|---|---|
+| Median APE (point forecast) | 54.2% | 54.8% | ~flat overall (individual segments moved a lot — see below) |
+| Mean pinball loss | 3,585.8 | 3,060.4 | −14.6% |
+| **P10–P90 empirical coverage** | **37.2%** | **57.8%** | **+55% relative** |
+
+**This is a real, measured improvement — and an honest, not-fully-solved
+one.** Coverage moved from badly overconfident (37.2%) to moderately
+overconfident (57.8%), still short of the 80% nominal target. Two reasons,
+disclosed rather than papered over: (1) only 3 walk-forward cutoffs per
+segment means achievable per-segment coverage is coarse (0%/33%/67%/100% —
+"75%" isn't a reachable number at that resolution, so §3.8's search targets
+≥67%, the nearest achievable rung below nominal); (2) some segments
+(`meta/Remarketing_Brand`, `bing/Shopping`) have such sparse/spiky history
+that no amount of residual widening fixes a systematically biased trend
+extrapolation — the honest fix there would be a fundamentally different
+uncertainty model (e.g. explicitly propagating trend-parameter uncertainty,
+not just residual noise), which is out of scope for the remaining time. This
+is called out again in §5 Limitations rather than left implicit.
+
+Point-accuracy movement was uneven but often large on exactly the segments
+§3.7 flagged as worst:
+
+| Segment | Baseline MAPE | Post-fix MAPE (winning method) |
+|---|---|---|
+| google/VIDEO | 2,147.9% | 1,891.8% (Holt-Winters) |
+| meta/Generic_Brand | 472.8% | 286.0% (Holt-Winters) |
+| meta/Prospecting_DPA | 489.9% | 126.5% (Holt-Winters) |
+| google/SEARCH | 22.3% | 33.3% (Holt-Winters; won on pinball loss, not MAPE — see note) |
+| google/PERFORMANCE_MAX | 24.0% | 31.3% (Holt-Winters; same note) |
+
+Note on `google/SEARCH` and `google/PERFORMANCE_MAX`: Holt-Winters won the
+method-selection because it minimizes **pinball loss** (the metric that
+matters for probabilistic forecasts — it scores the full P10/P50/P90 triple,
+not just the median), even though its point-forecast MAPE is slightly worse
+than empirical's on these two. Optimizing for pinball loss rather than MAPE
+alone is deliberate — a forecast that's calibrated but has a slightly worse
+median is more useful than one with a sharper median and badly wrong
+intervals, given the brief explicitly asks for probabilistic ranges.
 
 ## 4. Assumptions
 
@@ -195,11 +305,15 @@ drove the modeling changes in the rest of this document.
    **understates** the width of the blended P10–P90 band.
 3. Elasticity is estimated from **historical, not experimental**, spend/
    revenue covariation (no randomized budget experiments in the data) — it
-   captures correlation, not necessarily a causal spend effect. Segments
-   with <10 qualifying observations fall back to β=1.0 and are flagged
-   low-confidence in the narrative layer.
-4. Day-of-week seasonality only; no monthly/holiday seasonality modeling,
-   given the aggregate 30/60/90-day forecast horizon specified by the brief.
+   captures correlation, not necessarily a causal spend effect. A bootstrap
+   CI is computed (§3.4) and segments where it's wide (>1.0) or n_obs<10
+   fall back to β=1.0 for budget-scenario scaling specifically, flagged
+   low-confidence in the narrative layer and in `model.pkl`.
+4. Day-of-week **and** a Black Friday/Cyber Monday–through–year-end holiday
+   window (§3.2) are modeled; no finer-grained monthly seasonality or
+   per-year holiday calendar (e.g. distinguishing Diwali, Christmas week,
+   New Year specifically) is modeled, given the aggregate 30/60/90-day
+   forecast horizon specified by the brief.
 5. `output/predictions.csv`'s column schema (§below) is our own proposal —
    the exact schema announced at the AIgnition launch was not available in
    the materials provided at build time. **This must be verified against the
@@ -211,10 +325,13 @@ drove the modeling changes in the rest of this document.
   (assumption 2 above) — blended intervals are likely somewhat too narrow.
 - Elasticity is correlational, estimated on ~90–580 days of naturally
   varying spend per segment, not from held-out or experimental data.
-- Campaign-level (not just campaign_type-level) forecasts and anomaly
-  detection were not built given the time budget; `src/llm_summary.py`'s
-  anomaly detector operates at the individual-campaign grain for the
-  narrative layer only, not in `predictions.csv`.
+- Campaign-level forecasts (104 of 136 campaigns; 32 skipped for having
+  <30 days of history) reuse the method already selected for their parent
+  campaign_type segment rather than running a full separate
+  empirical-vs-Holt-Winters backtest per individual campaign — a
+  per-campaign-type choice was judged the right compute/rigor tradeoff, but
+  it means a handful of individual campaigns may not be on their personally
+  optimal method.
 - The LLM causal-narrative layer (`src/llm_summary.py`) was validated in
   this environment against its **deterministic template fallback path**
   only (no `ANTHROPIC_API_KEY` was available at build time) — the
@@ -225,16 +342,23 @@ drove the modeling changes in the rest of this document.
   any failure, so this does not risk `run.sh` or the demo layer breaking —
   but it should be smoke-tested with a real key before relying on it in a
   live demo.
-- Backtesting (§3.5/§3.6) uses only 3 walk-forward cutoffs per segment over
-  the last 90 days — enough to catch gross miscalibration, not enough for a
-  statistically tight coverage estimate (43 scored pairs total). The
-  post-fix calibration numbers in §3.6 should be read as "materially
-  better and roughly on target," not as a precise 80.0% guarantee.
-- The empirical coverage-correction factor in §3.6 is fit on the same
+- Backtesting (§3.7/§3.8) uses only 3 walk-forward cutoffs per segment over
+  the last 90 days — enough to catch gross miscalibration and to show a
+  real, measured improvement (37.2%→57.8% coverage), not enough for a
+  statistically tight coverage estimate (43 scored pairs total) or to hit
+  the 80% nominal target precisely. §3.8 states this directly rather than
+  rounding 57.8% up to "calibrated."
+- The per-segment calibration-scale factor in §3.8 is fit on the same
   backtest windows it's then evaluated against (no separate calibration/test
   split) — standard practice in low-data settings like this one, but it
   means the reported post-fix coverage is somewhat optimistic versus true
   out-of-sample performance.
+- Some segments' under-coverage doesn't respond to residual widening at all
+  (`meta/Remarketing_Brand`, `bing/Shopping`) — their forecast error is
+  dominated by trend-extrapolation bias on sparse/spiky history, not
+  residual noise, so no amount of noise-scale tuning fixes it. These
+  segments' intervals should be read with more caution than the aggregate
+  numbers suggest.
 
 ## 6. AI integration strategy
 
