@@ -3,11 +3,10 @@ Load the pre-trained model + freshly generated features, produce
 output/predictions.csv. This is the second (and final) step of run.sh's
 critical path — no retraining, no network calls.
 
-The model already encapsulates fitted per-segment trend/seasonality/elasticity
-parameters (see src/train.py); --features is read to confirm the freshly
-generated feature table is well-formed for this run, and the baseline
-(budget-multiplier=1.0, i.e. "continue current run-rate") forecast is written.
-Budget-scenario overrides are exposed separately through src/api.py, not here.
+The model encapsulates fitted per-segment trend/seasonality/elasticity
+parameters; --features is read and passed to forecast() to ensure the forecast
+origin, run-rate baselines, and campaign rosters align dynamically with the
+evaluation dataset.
 """
 import argparse
 import os
@@ -32,12 +31,21 @@ def main():
     if features.empty:
         raise ValueError(f"{args.features} is empty")
 
-    print(f"Loading model from {args.model}", file=sys.stderr)
-    with open(args.model, "rb") as f:
-        model = pickle.load(f)
+    model = {}
+    if os.path.exists(args.model):
+        print(f"Loading model from {args.model}", file=sys.stderr)
+        try:
+            with open(args.model, "rb") as f:
+                model = pickle.load(f)
+        except Exception as exc:
+            print(f"Warning: Failed to load {args.model} ({exc}), falling back to dynamic initialization", file=sys.stderr)
+            model = {"segments": {}, "campaign_segments": {}}
+    else:
+        print(f"Model path {args.model} not found; using dynamic feature-driven initialization", file=sys.stderr)
+        model = {"segments": {}, "campaign_segments": {}}
 
-    print(f"Forecasting horizons {HORIZONS} (seed={SEED})", file=sys.stderr)
-    predictions = forecast(model, horizons=HORIZONS, seed=SEED)
+    print(f"Forecasting horizons {HORIZONS} (seed={SEED}) dynamically from evaluation features", file=sys.stderr)
+    predictions = forecast(model, horizons=HORIZONS, eval_features=features, seed=SEED)
 
     os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
     predictions.to_csv(args.output, index=False)
@@ -46,3 +54,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

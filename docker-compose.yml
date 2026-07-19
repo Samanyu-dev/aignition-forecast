@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  forecast-pipeline:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./pickle:/app/pickle
+    command: ["./data", "./pickle/model.pkl", "./output/predictions.csv"]
+
+  api:
+    build: .
+    command: uvicorn src.api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DATA_DIR=/app/data
+      - MODEL_PATH=/app/pickle/model.pkl
+    volumes:
+      - ./data:/app/data
+      - ./pickle:/app/pickle

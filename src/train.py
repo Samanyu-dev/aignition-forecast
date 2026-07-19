@@ -521,10 +521,41 @@ def main():
     print(f"Wrote model with {len(segments)} campaign_type segments + "
           f"{len(campaign_segments)} campaign segments to {args.model_out}", file=sys.stderr)
 
+    # Dual export: JSON format for safe non-pickle serialization
+    json_model_out = os.path.splitext(args.model_out)[0] + ".json"
+    try:
+        def _json_serialize(obj):
+            if isinstance(obj, pd.Timestamp):
+                return obj.isoformat()
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            if isinstance(obj, np.generic):
+                return obj.item()
+            if isinstance(obj, tuple):
+                return list(obj)
+            raise TypeError(f"Type {type(obj)} not serializable")
+
+        # Convert tuple dict keys to string keys for JSON compatibility
+        json_safe_model = {
+            "segments": {f"{k[0]}/{k[1]}": v for k, v in segments.items()},
+            "campaign_segments": {f"{k[0]}/{k[1]}/{k[2]}": v for k, v in campaign_segments.items()},
+            "channel_uncertainty_inflation": CHANNEL_UNCERTAINTY_INFLATION,
+            "backtest_summary": backtest_summary,
+            "feature_schema_version": 2,
+            "trained_at": datetime.utcnow().isoformat(),
+            "seed": SEED,
+        }
+        with open(json_model_out, "w") as f:
+            json.dump(json_safe_model, f, indent=2, default=_json_serialize)
+        print(f"Wrote JSON model artifact to {json_model_out}", file=sys.stderr)
+    except Exception as exc:
+        print(f"Warning: JSON model export skipped ({exc})", file=sys.stderr)
+
     os.makedirs(os.path.dirname(args.backtest_out) or ".", exist_ok=True)
     with open(args.backtest_out, "w") as f:
         json.dump(backtest_summary, f, indent=2, default=str)
     print(f"Wrote post-fix backtest summary to {args.backtest_out}", file=sys.stderr)
+
 
 
 if __name__ == "__main__":

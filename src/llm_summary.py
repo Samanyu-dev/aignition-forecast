@@ -431,3 +431,51 @@ def generate_causal_summary(
         "risk_flags": narrative["risk_flags"],
         "source": source,
     }
+
+
+def main():
+    import argparse
+    import json
+    import pickle
+    from forecasting import forecast
+
+    ap = argparse.ArgumentParser(description="Generate AI-assisted causal business narrative and risk report")
+    ap.add_argument("--features", required=True, help="Path to normalized parquet features")
+    ap.add_argument("--model", required=True, help="Path to model pkl")
+    ap.add_argument("--out-json", help="Path to output insights.json")
+    ap.add_argument("--out-txt", help="Path to output insights.txt")
+    args = ap.parse_args()
+
+    features = pd.read_parquet(args.features)
+    model = {}
+    if os.path.exists(args.model):
+        try:
+            with open(args.model, "rb") as f:
+                model = pickle.load(f)
+        except Exception:
+            model = {}
+
+    baseline_fc = forecast(model, eval_features=features)
+    summary = generate_causal_summary(features, model, baseline_fc)
+
+    if args.out_json:
+        os.makedirs(os.path.dirname(args.out_json) or ".", exist_ok=True)
+        with open(args.out_json, "w") as f:
+            json.dump(summary, f, indent=2)
+        print(f"Wrote AI insights JSON to {args.out_json}", file=sys.stderr)
+
+    if args.out_txt:
+        os.makedirs(os.path.dirname(args.out_txt) or ".", exist_ok=True)
+        with open(args.out_txt, "w") as f:
+            f.write(f"=== AIGNITION BUSINESS NARRATIVE ({summary['source'].upper()}) ===\n\n")
+            f.write(summary["narrative"] + "\n\n")
+            if summary["risk_flags"]:
+                f.write("RISK FLAGS & CAVEATS:\n")
+                for r in summary["risk_flags"]:
+                    f.write(f" - {r}\n")
+        print(f"Wrote AI insights text to {args.out_txt}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()
+

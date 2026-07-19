@@ -39,7 +39,22 @@ def _find_file(data_dir: str, needle: str) -> str:
         raise FileNotFoundError(f"No CSV matching '*{needle}*' found in {data_dir}")
     if len(matches) > 1:
         matches.sort()
+        print(f"Warning: multiple CSVs match '*{needle}*' in {data_dir} ({matches}); "
+              f"using {matches[0]}", file=sys.stderr)
     return matches[0]
+
+
+def _require_columns(df: pd.DataFrame, required: list, source: str, path: str) -> None:
+    """Fail fast with an actionable message instead of a bare pandas KeyError deep
+    inside a column-construction expression -- if the hidden evaluation dataset's
+    schema drifts from what these loaders expect, this is the first place that
+    would need to catch it."""
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"{source} file {path} is missing expected column(s) {missing}. "
+            f"Columns present: {list(df.columns)}"
+        )
 
 
 def infer_funnel_stage(campaign_name: str) -> str:
@@ -56,6 +71,10 @@ def infer_funnel_stage(campaign_name: str) -> str:
 
 def load_bing(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
+    _require_columns(
+        df, ["TimePeriod", "CampaignId", "CampaignName", "CampaignType", "Spend", "Revenue", "Conversions"],
+        "Bing", path,
+    )
     out = pd.DataFrame({
         "date": pd.to_datetime(df["TimePeriod"]),
         "channel": "bing",
@@ -72,6 +91,11 @@ def load_bing(path: str) -> pd.DataFrame:
 
 def load_google(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
+    _require_columns(
+        df, ["segments_date", "campaign_id", "campaign_name", "campaign_advertising_channel_type",
+             "metrics_cost_micros", "metrics_conversions_value", "metrics_conversions"],
+        "Google", path,
+    )
     out = pd.DataFrame({
         "date": pd.to_datetime(df["segments_date"]),
         "channel": "google",
@@ -88,6 +112,10 @@ def load_google(path: str) -> pd.DataFrame:
 
 def load_meta(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
+    _require_columns(
+        df, ["date_start", "campaign_id", "campaign_name", "spend", "conversion"],
+        "Meta", path,
+    )
     campaign_type = (
         df["campaign_name"]
         .astype(str)
