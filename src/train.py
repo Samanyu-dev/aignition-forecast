@@ -40,7 +40,8 @@ from backtest_core import evaluate_segment_method, generate_cutoffs, valid_cutof
 SEED = 42
 TREND_WINDOW_DAYS = 120
 CLIP_PERCENTILE = 97  # cap extreme single-day spikes (e.g. Black Friday) before fitting the trend line
-MIN_CAMPAIGN_DAYS = 30  # skip individual campaigns with less history than this rather than fabricate
+MIN_CAMPAIGN_DAYS = 30  # fit independently only above this; below, use hierarchical shrinkage instead
+MIN_DAYS_FOR_SHRINKAGE = 3  # below this, even a shrinkage-anchored level has no real signal -- skip
 ELASTICITY_CI_WIDTH_THRESHOLD = 1.0  # if the 10-90 bootstrap CI on beta is wider than this, don't trust it for scenarios
 CALIBRATION_CANDIDATE_SCALES = [1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
 CALIBRATION_TARGET_COVERAGE = 75.0  # aim close to the 80% nominal without being needlessly wide
@@ -315,26 +316,81 @@ def search_calibration_scale(segment_daily: dict, segment_fit_fns: dict, base_in
     return per_segment_scale, per_segment_eval, per_segment_curve
 
 
-def fit_campaign_segments(features: pd.DataFrame, campaign_type_methods: dict) -> dict:
-    """Fit per-individual-campaign models, reusing the winning method already
-    selected for that campaign's parent (channel, campaign_type) segment
-    (skipping a full method-comparison backtest per campaign to keep this
-    tractable -- see docs/TECHNICAL_DOC.md limitations). Campaigns with fewer
-    than MIN_CAMPAIGN_DAYS observed days are skipped, not fabricated."""
+def fit_shrinkage_from_parent(daily_child: pd.DataFrame, parent_seg: dict) -> dict:
+    """Hierarchical shrinkage for a child segment with too little history to fit
+    independently: borrow the parent (channel, campaign_type) segment's trend/
+    seasonal SHAPE (dow_factor + holiday_factor, or the Holt-Winters point-forecast
+    curve) and residual-pool volatility shape, but anchor the LEVEL to the child's
+    own observed average daily revenue/spend, scaled proportionally. This is
+    partial pooling ("borrow statistical strength"), not a parent-forecast
+    passthrough -- the child's own real (if sparse) observations still set its
+    level; only the shape comes from the better-estimated parent. Bottom-up in
+    the sense that child-level totals are still anchored to child-level data,
+    not derived by splitting a parent forecast top-down."""
+    n = len(daily_child)
+    child_avg_daily_revenue = float(daily_child["revenue"].mean()) if n > 0 else 0.0
+    child_avg_daily_spend = float(daily_child["spend"].mean()) if n > 0 else 0.0
+    parent_avg_revenue = parent_seg.get("avg_daily_revenue") or 0.0
+    scale = (child_avg_daily_revenue / parent_avg_revenue) if parent_avg_revenue > 0 else 0.0
+
+    seg = {
+        "method": parent_seg["method"],
+        "is_shrinkage": True,
+        "shrinkage_source": f"{parent_seg['channel']}/{parent_seg['campaign_type']}",
+        "last_train_date": daily_child["date"].max() if n > 0 else parent_seg["last_train_date"],
+        "avg_daily_spend": child_avg_daily_spend,
+        "avg_daily_revenue": child_avg_daily_revenue,
+        "n_days_observed": n,
+        "residual_pool": parent_seg["residual_pool"] * scale,
+    }
+    if parent_seg["method"] == "holt_winters":
+        seg["hw_point_forecast"] = parent_seg["hw_point_forecast"] * scale
+    else:
+        seg["trend_slope"] = parent_seg["trend_slope"] * scale
+        seg["trend_intercept_at_end"] = parent_seg["trend_intercept_at_end"] * scale
+        seg["dow_factor"] = parent_seg["dow_factor"]
+        seg["holiday_factor"] = parent_seg.get("holiday_factor", 1.0)
+    return seg
+
+
+def fit_campaign_segments(features: pd.DataFrame, campaign_type_methods: dict, parent_segments: dict) -> dict:
+    """Fit per-individual-campaign models. Three tiers by observed history:
+      - >=MIN_CAMPAIGN_DAYS: fit independently, reusing the winning method
+        already selected for the parent (channel, campaign_type) segment
+        (skipping a full method-comparison backtest per campaign to keep this
+        tractable -- see docs/TECHNICAL_DOC.md limitations).
+      - MIN_DAYS_FOR_SHRINKAGE..MIN_CAMPAIGN_DAYS: too little history to fit
+        independently, but not nothing -- hierarchical shrinkage from the
+        parent segment (fit_shrinkage_from_parent) rather than being dropped.
+      - <MIN_DAYS_FOR_SHRINKAGE: genuinely no signal at all -- skipped, not
+        fabricated."""
     campaign_segments = {}
     skipped = []
+    shrinkage_applied = []
     combos = features[["channel", "campaign_type", "campaign_id"]].drop_duplicates().itertuples(index=False)
     for channel, campaign_type, campaign_id in combos:
         daily = daily_campaign_series(features, channel, campaign_id)
-        if daily["date"].nunique() < MIN_CAMPAIGN_DAYS:
+        n = daily["date"].nunique()
+
+        if n < MIN_DAYS_FOR_SHRINKAGE:
             skipped.append(f"{channel}/{campaign_id}")
             continue
 
-        fit_fn = campaign_type_methods.get((channel, campaign_type), fit_trend_seasonal)
-        try:
-            seg_model = fit_fn(daily)
-        except Exception:
-            seg_model = fit_trend_seasonal(daily)
+        if n < MIN_CAMPAIGN_DAYS:
+            parent_key = (channel, campaign_type)
+            if parent_key not in parent_segments:
+                skipped.append(f"{channel}/{campaign_id}")
+                continue
+            seg_model = fit_shrinkage_from_parent(daily, parent_segments[parent_key])
+            shrinkage_applied.append(f"{channel}/{campaign_id}")
+        else:
+            fit_fn = campaign_type_methods.get((channel, campaign_type), fit_trend_seasonal)
+            try:
+                seg_model = fit_fn(daily)
+            except Exception:
+                seg_model = fit_trend_seasonal(daily)
+            seg_model["is_shrinkage"] = False
+
         seg_model.update(fit_elasticity(daily))
         seg_model["channel"] = channel
         seg_model["campaign_type"] = campaign_type
@@ -342,8 +398,9 @@ def fit_campaign_segments(features: pd.DataFrame, campaign_type_methods: dict) -
         seg_model["uncertainty_inflation"] = CHANNEL_UNCERTAINTY_INFLATION.get(channel, 1.0)
         campaign_segments[(channel, campaign_type, campaign_id)] = seg_model
 
-    print(f"  campaign-level: fit {len(campaign_segments)}, skipped {len(skipped)} (<{MIN_CAMPAIGN_DAYS}d history)",
-          file=sys.stderr)
+    print(f"  campaign-level: fit {len(campaign_segments)} ({len(shrinkage_applied)} via hierarchical "
+          f"shrinkage from parent campaign_type), skipped {len(skipped)} (<{MIN_DAYS_FOR_SHRINKAGE}d history, "
+          f"no signal at all)", file=sys.stderr)
     return campaign_segments
 
 
@@ -426,7 +483,7 @@ def main():
 
     campaign_type_methods = {key: segment_fit_fns[key] for key in combos}
     print("Fitting campaign-level models...", file=sys.stderr)
-    campaign_segments = fit_campaign_segments(features, campaign_type_methods)
+    campaign_segments = fit_campaign_segments(features, campaign_type_methods, segments)
 
     scored = [v for v in final_backtest_detail.values() if v["n_scored"] > 0]
     n_no_tuning = sum(1 for v in final_backtest_detail.values() if v.get("no_calibration_tuning"))

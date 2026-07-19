@@ -441,6 +441,36 @@ marginal ROAS (via a local regression on realized spend/revenue in the
 window) rather than levels; that refinement is out of scope for the
 remaining time.
 
+### 3.11 Hierarchical shrinkage for insufficient-history campaigns
+
+`src/train.py::fit_campaign_segments` originally required ≥30 observed days
+to fit an individual campaign at all — 32 of 136 campaigns fell short and
+were simply dropped from campaign-level output ("skip, don't fabricate").
+That's honest but wasteful: a campaign with, say, 8 days of history has real
+information (its own observed average daily revenue/spend), even if not
+enough to independently estimate a trend or seasonal shape.
+
+`fit_shrinkage_from_parent()` implements partial pooling for campaigns with
+3–29 observed days: borrow the parent (channel, campaign_type) segment's
+trend/seasonal **shape** (day-of-week factors, holiday factor, or the
+Holt-Winters point-forecast curve — whichever method the parent uses) and
+residual-pool **volatility shape**, but anchor the **level** to the child's
+own observed average daily revenue, scaled proportionally
+(`child_avg_revenue / parent_avg_revenue`). This is standard hierarchical
+shrinkage, not a parent-forecast passthrough — the child's own real
+observations, however sparse, still set its scale; only the shape (which
+needs more data to estimate reliably) comes from the better-estimated
+parent. Segments with <3 days keep no genuine signal at all and are still
+skipped.
+
+**Result: campaign-level coverage went from 104/136 to 131/136 campaigns**
+(27 now fit via shrinkage; only 5 true skips remain, all with <3 days).
+Sanity-checked: no NaN/inf/negative values across any of the 131 × 3
+horizons × up to 2 metrics campaign-level forecast rows. A shrinkage
+segment is tagged `is_shrinkage: true` and `shrinkage_source` in
+`model.pkl` for full transparency about which forecasts are independently
+estimated versus borrowed.
+
 ## 4. Assumptions
 
 1. Meta's `conversion` field is conversion value, not count (§2.2).
@@ -486,13 +516,16 @@ remaining time.
   (assumption 2 above) — blended intervals are likely somewhat too narrow.
 - Elasticity is correlational, estimated on ~90–580 days of naturally
   varying spend per segment, not from held-out or experimental data.
-- Campaign-level forecasts (104 of 136 campaigns; 32 skipped for having
-  <30 days of history) reuse the method already selected for their parent
-  campaign_type segment rather than running a full separate
-  empirical-vs-Holt-Winters backtest per individual campaign — a
-  per-campaign-type choice was judged the right compute/rigor tradeoff, but
-  it means a handful of individual campaigns may not be on their personally
-  optimal method.
+- Campaign-level forecasts (131 of 136 campaigns; 5 skipped for having
+  <3 days of history — genuinely no signal) reuse the method already
+  selected for their parent campaign_type segment rather than running a
+  full separate empirical-vs-Holt-Winters backtest per individual campaign
+  — a per-campaign-type choice was judged the right compute/rigor tradeoff,
+  but it means a handful of individual campaigns may not be on their
+  personally optimal method. Of the 131, 27 (3–29 days of own history) use
+  **hierarchical shrinkage** (§3.11) rather than an independent fit — this
+  materially increased coverage (104→131) versus the earlier cutoff, which
+  simply dropped anything under 30 days.
 - The LLM causal-narrative layer (`src/llm_summary.py`) was validated in
   this environment against its **deterministic template fallback path**
   only (no `ANTHROPIC_API_KEY` was available at build time) — the
