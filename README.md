@@ -1,10 +1,20 @@
 # AIgnition 3.0 — Probabilistic Revenue Forecasting
 
-An AI-assisted forecasting utility for digital marketing agencies. Ingests
-Google Ads, Microsoft (Bing) Ads, and Meta Ads campaign data and produces
-probabilistic (P10/P50/P90) revenue and ROAS forecasts over 30/60/90-day
-horizons, at blended / channel / campaign-type granularity, with budget
-scenario simulation and an AI-generated causal narrative.
+An AI-assisted forecasting utility for digital marketing agencies: ingests
+Google Ads, Microsoft (Bing) Ads, and Meta Ads data and produces genuinely
+probabilistic (P10/P50/P90) revenue and ROAS forecasts — blended, per
+channel, per campaign_type, and per individual campaign — with budget
+scenario simulation and an AI-generated causal narrative. **The two things
+that make it credible, not just functional:** it caught that Meta's revenue
+column is silently mislabeled as a conversion count (proven statistically,
+not assumed — see §2.2 of `docs/TECHNICAL_DOC.md`), and its "probabilistic"
+claim is walk-forward backtested rather than asserted — including the
+honest finding that the first model version was badly overconfident
+(37.2% actual P10–P90 coverage vs. 80% nominal) and the concrete fix that
+closed most of that gap (§3.7–3.8).
+
+See `docs/DEMO_WORKFLOW.md` for an end-to-end walkthrough with real captured
+output (data ingestion → forecast → budget simulation → AI insight).
 
 ## Python version
 
@@ -66,6 +76,7 @@ aignition-forecast/
 └── docs/
     ├── TECHNICAL_DOC.md               # methodology, backtest results, assumptions, limitations, AI strategy
     ├── ARCHITECTURE.md                # frontend/backend/pipeline/LLM workflow
+    ├── DEMO_WORKFLOW.md               # ingestion -> forecast -> budget sim -> AI insight, with real captured output
     ├── backtest_results_baseline.json # pre-Step-2 walk-forward backtest (single method)
     ├── backtest_results.json          # empirical-vs-Holt-Winters method comparison
     └── backtest_results_post_fix.json # post-fix (winning method + calibration) walk-forward results
