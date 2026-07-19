@@ -64,6 +64,40 @@ originally built to segment Meta's AOV imputation; it's retained as a
 `funnel_stage` column even though imputation was dropped (§2.2), since it's
 a useful, low-cost segment for downstream analysis.
 
+### 2.4 Campaign consistency validation
+
+A distinct, reusable pipeline step (`src/validate_consistency.py`), separate
+from ingestion and forecasting — the earlier Meta-mislabeling (§2.2) and
+Bing zero-revenue (§3.1's inventory note) findings were ad hoc investigative
+work; this generalizes and formalizes that kind of check into a structured,
+reusable report (`docs/validation_report.json`), surfaced in its own
+Streamlit panel and fed into the AI narrative's `compute_stats()`. Reads the
+raw per-channel CSVs directly (budget/click columns aren't carried into the
+trimmed forecasting schema). Six checks, run per channel:
+
+1. **Campaign ID stability** — does a `campaign_id` map to more than one
+   `campaign_name`/`campaign_type` over time? (0 issues found — clean.)
+2. **Date-coverage gaps** — any campaign with >14 consecutive inactive days
+   inside its active range? (19 found.)
+3. **Budget exceeded** — daily spend >5% over the campaign's stated
+   `daily_budget`? (90 found — see caveat below.)
+4. **Conversions exceed clicks** — Bing/Google only, since Meta has no
+   genuine conversion-count field (§2.2). (6 found, 1 row each.)
+5. **Negative/impossible values** — any negative spend/revenue/clicks/
+   conversions/impressions. (0 found — clean.)
+6. **Zero-revenue-with-spend** — lifetime spend>0, lifetime revenue=0,
+   generalizing the original Bing-specific finding to all three channels
+   the same way. (32 found: 18 Bing, 14 Google — the Google instances are a
+   new finding this generalization surfaced, not previously reported.)
+
+**Caveat on "budget exceeded" (90 flagged, the largest category):** a
+platform's `daily_budget` field is typically a *pacing average* the system
+is allowed to exceed on any individual day (sometimes by 2x or more) while
+holding a longer-run average — it is usually not a hard per-day cap. This
+check is flagged for visibility and completeness, not because every instance
+is a genuine error; the AI narrative layer is explicitly told this via its
+prompt, so it doesn't over-weight this category relative to the other five.
+
 ## 3. Forecasting methodology
 
 ### 3.1 Two candidate methods, chosen per segment by backtest — not by assumption

@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from forecasting import forecast, HORIZONS
 from generate_features import _find_file, load_bing, load_google, load_meta, infer_funnel_stage
 from llm_summary import generate_causal_summary
+from validate_consistency import run_validation
 
 DATA_DIR = os.environ.get("DATA_DIR", "./data")
 MODEL_PATH = os.environ.get("MODEL_PATH", "./pickle/model.pkl")
@@ -26,10 +27,11 @@ app = FastAPI(title="AIgnition Forecast API")
 
 _model = None
 _features = None
+_validation_report = None
 
 
 def _load_state():
-    global _model, _features
+    global _model, _features, _validation_report
     with open(MODEL_PATH, "rb") as f:
         _model = pickle.load(f)
 
@@ -40,6 +42,8 @@ def _load_state():
     features["funnel_stage"] = features["campaign_name"].apply(infer_funnel_stage)
     features["date"] = pd.to_datetime(features["date"])
     _features = features
+
+    _validation_report = run_validation(DATA_DIR)
 
 
 @app.on_event("startup")
@@ -79,10 +83,16 @@ def get_forecast(req: ForecastRequest):
     response = {"forecast": filtered.to_dict(orient="records")}
 
     if req.include_narrative:
-        summary = generate_causal_summary(_features, _model, baseline, scenario)
+        summary = generate_causal_summary(_features, _model, baseline, scenario,
+                                           validation_report=_validation_report)
         response["narrative"] = summary["narrative"]
         response["risk_flags"] = summary["risk_flags"]
         response["narrative_source"] = summary["source"]
         response["stats"] = summary["stats"]
 
     return response
+
+
+@app.get("/validation-report")
+def get_validation_report():
+    return _validation_report

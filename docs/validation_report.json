@@ -1,0 +1,925 @@
+{
+  "generated_from": "data",
+  "channels": {
+    "bing": {
+      "channel": "bing",
+      "n_campaigns": 28,
+      "n_rows": 2873,
+      "n_issues_flagged": 40,
+      "checks": {
+        "campaign_id_stability": [],
+        "date_coverage_gaps": [
+          {
+            "campaign_id": "566560838",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 20
+          },
+          {
+            "campaign_id": "569378946",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 27
+          },
+          {
+            "campaign_id": "570837626",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 17
+          },
+          {
+            "campaign_id": "570837627",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 30
+          },
+          {
+            "campaign_id": "570837630",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 23
+          },
+          {
+            "campaign_id": "570837631",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 18
+          }
+        ],
+        "budget_exceeded": [
+          {
+            "campaign_id": "566560838",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 257,
+            "max_overspend_pct": 2490.5
+          },
+          {
+            "campaign_id": "569378946",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 293,
+            "max_overspend_pct": 845.2
+          },
+          {
+            "campaign_id": "570837607",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 65,
+            "max_overspend_pct": 950.4
+          },
+          {
+            "campaign_id": "570837608",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 1,
+            "max_overspend_pct": 169.0
+          },
+          {
+            "campaign_id": "570837609",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 27,
+            "max_overspend_pct": 456.1
+          },
+          {
+            "campaign_id": "570837612",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 7,
+            "max_overspend_pct": 113.8
+          },
+          {
+            "campaign_id": "570837615",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 9,
+            "max_overspend_pct": 91.7
+          },
+          {
+            "campaign_id": "570837618",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 1,
+            "max_overspend_pct": 75.0
+          },
+          {
+            "campaign_id": "570837619",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 10,
+            "max_overspend_pct": 389.6
+          },
+          {
+            "campaign_id": "570837620",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 9,
+            "max_overspend_pct": 287.8
+          },
+          {
+            "campaign_id": "570837621",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 6,
+            "max_overspend_pct": 153.9
+          },
+          {
+            "campaign_id": "570837624",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 8,
+            "max_overspend_pct": 62.2
+          },
+          {
+            "campaign_id": "570837627",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 36,
+            "max_overspend_pct": 203.0
+          },
+          {
+            "campaign_id": "570837628",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 17,
+            "max_overspend_pct": 419.0
+          },
+          {
+            "campaign_id": "570837630",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 2,
+            "max_overspend_pct": 120.3
+          },
+          {
+            "campaign_id": "570837631",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 8,
+            "max_overspend_pct": 211.9
+          }
+        ],
+        "conversions_exceed_clicks": [],
+        "negative_values": [],
+        "zero_revenue_with_spend": [
+          {
+            "campaign_id": "570837608",
+            "campaign_name": "Pmax_NTM_Campaign_02",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 36.46
+          },
+          {
+            "campaign_id": "570837610",
+            "campaign_name": "Pmax_NTM_Campaign_04",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 13.79
+          },
+          {
+            "campaign_id": "570837611",
+            "campaign_name": "Pmax_NTM_Campaign_05",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 7.36
+          },
+          {
+            "campaign_id": "570837612",
+            "campaign_name": "Pmax_NTM_Campaign_06",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 427.09
+          },
+          {
+            "campaign_id": "570837613",
+            "campaign_name": "Pmax_NTM_Campaign_07",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 5.18
+          },
+          {
+            "campaign_id": "570837614",
+            "campaign_name": "Pmax_NTM_Campaign_08",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 3.62
+          },
+          {
+            "campaign_id": "570837615",
+            "campaign_name": "Pmax_NTM_Campaign_09",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 457.48
+          },
+          {
+            "campaign_id": "570837616",
+            "campaign_name": "Pmax_NTM_Campaign_10",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 13.58
+          },
+          {
+            "campaign_id": "570837617",
+            "campaign_name": "Pmax_NTM_Campaign_11",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 12.77
+          },
+          {
+            "campaign_id": "570837618",
+            "campaign_name": "Pmax_NTM_Campaign_12",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 21.4
+          },
+          {
+            "campaign_id": "570837621",
+            "campaign_name": "Pmax_NTM_Campaign_15",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 396.73
+          },
+          {
+            "campaign_id": "570837622",
+            "campaign_name": "Pmax_NTM_Campaign_16",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 18.28
+          },
+          {
+            "campaign_id": "570837623",
+            "campaign_name": "Pmax_NTM_Campaign_17",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 26.82
+          },
+          {
+            "campaign_id": "570837624",
+            "campaign_name": "Pmax_NTM_Campaign_18",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 458.1
+          },
+          {
+            "campaign_id": "570837625",
+            "campaign_name": "Pmax_NTM_Campaign_19",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 2.11
+          },
+          {
+            "campaign_id": "570837626",
+            "campaign_name": "Search_TM_Campaign_04",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 0.16
+          },
+          {
+            "campaign_id": "570837630",
+            "campaign_name": "Demand Gen_NTM_Campaign_01",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 203.15
+          },
+          {
+            "campaign_id": "570837631",
+            "campaign_name": "Demand Gen_NTM_Campaign_02",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 490.13
+          }
+        ]
+      }
+    },
+    "google": {
+      "channel": "google",
+      "n_campaigns": 92,
+      "n_rows": 19272,
+      "n_issues_flagged": 104,
+      "checks": {
+        "campaign_id_stability": [],
+        "date_coverage_gaps": [
+          {
+            "campaign_id": "18253990962",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 38
+          },
+          {
+            "campaign_id": "19902093803",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 72
+          },
+          {
+            "campaign_id": "21555598453",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 28
+          },
+          {
+            "campaign_id": "21560212684",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 29
+          },
+          {
+            "campaign_id": "21777702230",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 120
+          },
+          {
+            "campaign_id": "21784340304",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 28
+          },
+          {
+            "campaign_id": "21794370952",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 116
+          },
+          {
+            "campaign_id": "21808837082",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 142
+          },
+          {
+            "campaign_id": "21812740018",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 28
+          },
+          {
+            "campaign_id": "21885723757",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 334
+          },
+          {
+            "campaign_id": "22094147466",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 28
+          },
+          {
+            "campaign_id": "22104151159",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 28
+          }
+        ],
+        "budget_exceeded": [
+          {
+            "campaign_id": "9988712287",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 623,
+            "max_overspend_pct": 5357.5
+          },
+          {
+            "campaign_id": "14459556872",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 2,
+            "max_overspend_pct": 76.0
+          },
+          {
+            "campaign_id": "18253990962",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 685,
+            "max_overspend_pct": 28566.7
+          },
+          {
+            "campaign_id": "18259733009",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 299,
+            "max_overspend_pct": 4438.3
+          },
+          {
+            "campaign_id": "19902093803",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 53,
+            "max_overspend_pct": 423.4
+          },
+          {
+            "campaign_id": "20437094522",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 1,
+            "max_overspend_pct": 731.7
+          },
+          {
+            "campaign_id": "20834199963",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 1,
+            "max_overspend_pct": 6.7
+          },
+          {
+            "campaign_id": "21259674897",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 6,
+            "max_overspend_pct": 90.5
+          },
+          {
+            "campaign_id": "21263646438",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 409,
+            "max_overspend_pct": 9920.0
+          },
+          {
+            "campaign_id": "21269832716",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 164,
+            "max_overspend_pct": 4559.3
+          },
+          {
+            "campaign_id": "21316026385",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 2,
+            "max_overspend_pct": 98.0
+          },
+          {
+            "campaign_id": "21551974931",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 116,
+            "max_overspend_pct": 1216.5
+          },
+          {
+            "campaign_id": "21555598453",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 305,
+            "max_overspend_pct": 4529.1
+          },
+          {
+            "campaign_id": "21560212684",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 152,
+            "max_overspend_pct": 1328.3
+          },
+          {
+            "campaign_id": "21560247115",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 147,
+            "max_overspend_pct": 4293.2
+          },
+          {
+            "campaign_id": "21567626631",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 145,
+            "max_overspend_pct": 1460.0
+          },
+          {
+            "campaign_id": "21577977814",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 114,
+            "max_overspend_pct": 936.3
+          },
+          {
+            "campaign_id": "21587818996",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 471,
+            "max_overspend_pct": 3237.3
+          },
+          {
+            "campaign_id": "21638781593",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 131,
+            "max_overspend_pct": 2675.1
+          },
+          {
+            "campaign_id": "21663737223",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 315,
+            "max_overspend_pct": 4504.5
+          },
+          {
+            "campaign_id": "21697189844",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 26,
+            "max_overspend_pct": 453.4
+          },
+          {
+            "campaign_id": "21700991485",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 38,
+            "max_overspend_pct": 670.7
+          },
+          {
+            "campaign_id": "21776623830",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 115,
+            "max_overspend_pct": 7740.1
+          },
+          {
+            "campaign_id": "21777702230",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 75,
+            "max_overspend_pct": 860.1
+          },
+          {
+            "campaign_id": "21783084650",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 51,
+            "max_overspend_pct": 2245.7
+          },
+          {
+            "campaign_id": "21784340082",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 71,
+            "max_overspend_pct": 2414.4
+          },
+          {
+            "campaign_id": "21784340304",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 192,
+            "max_overspend_pct": 70439.1
+          },
+          {
+            "campaign_id": "21794370952",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 118,
+            "max_overspend_pct": 639.3
+          },
+          {
+            "campaign_id": "21802413975",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 44,
+            "max_overspend_pct": 1129.5
+          },
+          {
+            "campaign_id": "21802413978",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 440,
+            "max_overspend_pct": 5089.2
+          },
+          {
+            "campaign_id": "21808837082",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 27,
+            "max_overspend_pct": 1237.1
+          },
+          {
+            "campaign_id": "21812740018",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 173,
+            "max_overspend_pct": 19177.0
+          },
+          {
+            "campaign_id": "21885429025",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 14,
+            "max_overspend_pct": 99.3
+          },
+          {
+            "campaign_id": "21885723757",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 36,
+            "max_overspend_pct": 2308.2
+          },
+          {
+            "campaign_id": "21956274883",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 77,
+            "max_overspend_pct": 38152.8
+          },
+          {
+            "campaign_id": "22094147466",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 83,
+            "max_overspend_pct": 3474.4
+          },
+          {
+            "campaign_id": "22104151159",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 94,
+            "max_overspend_pct": 2693.5
+          },
+          {
+            "campaign_id": "22145950209",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 1,
+            "max_overspend_pct": 45.7
+          },
+          {
+            "campaign_id": "22183402690",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 1,
+            "max_overspend_pct": 9.4
+          },
+          {
+            "campaign_id": "22211017642",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 38,
+            "max_overspend_pct": 241.4
+          },
+          {
+            "campaign_id": "22211017645",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 64,
+            "max_overspend_pct": 186.9
+          },
+          {
+            "campaign_id": "22211017648",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 16,
+            "max_overspend_pct": 59.8
+          },
+          {
+            "campaign_id": "22211017651",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 53,
+            "max_overspend_pct": 453.1
+          },
+          {
+            "campaign_id": "22211017654",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 245,
+            "max_overspend_pct": 2203.2
+          },
+          {
+            "campaign_id": "22227081821",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 41,
+            "max_overspend_pct": 218.0
+          },
+          {
+            "campaign_id": "22233923036",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 3,
+            "max_overspend_pct": 88.1
+          },
+          {
+            "campaign_id": "22379725812",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 55,
+            "max_overspend_pct": 1153.7
+          },
+          {
+            "campaign_id": "22496284541",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 103,
+            "max_overspend_pct": 799.2
+          },
+          {
+            "campaign_id": "22496284928",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 124,
+            "max_overspend_pct": 4916.0
+          },
+          {
+            "campaign_id": "22635965025",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 119,
+            "max_overspend_pct": 567.4
+          },
+          {
+            "campaign_id": "22645714681",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 170,
+            "max_overspend_pct": 1542.0
+          },
+          {
+            "campaign_id": "22719291493",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 148,
+            "max_overspend_pct": 10136.7
+          },
+          {
+            "campaign_id": "22739335904",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 50,
+            "max_overspend_pct": 891.2
+          },
+          {
+            "campaign_id": "22819091664",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 171,
+            "max_overspend_pct": 1056.1
+          },
+          {
+            "campaign_id": "22819175439",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 149,
+            "max_overspend_pct": 1726.4
+          },
+          {
+            "campaign_id": "22866636855",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 127,
+            "max_overspend_pct": 3509.4
+          },
+          {
+            "campaign_id": "22946407106",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 161,
+            "max_overspend_pct": 33046.8
+          },
+          {
+            "campaign_id": "23069675969",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 55,
+            "max_overspend_pct": 574.2
+          },
+          {
+            "campaign_id": "23069675972",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 81,
+            "max_overspend_pct": 2870.6
+          },
+          {
+            "campaign_id": "23078147752",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 45,
+            "max_overspend_pct": 1154.5
+          },
+          {
+            "campaign_id": "23121755418",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 201,
+            "max_overspend_pct": 3835.4
+          },
+          {
+            "campaign_id": "23205156959",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 54,
+            "max_overspend_pct": 1557.8
+          },
+          {
+            "campaign_id": "23259820296",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 144,
+            "max_overspend_pct": 1510.8
+          },
+          {
+            "campaign_id": "23261571739",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 1,
+            "max_overspend_pct": 16.0
+          },
+          {
+            "campaign_id": "23655927759",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 9,
+            "max_overspend_pct": 133.3
+          },
+          {
+            "campaign_id": "23655929490",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 6,
+            "max_overspend_pct": 106.5
+          },
+          {
+            "campaign_id": "23665957891",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 72,
+            "max_overspend_pct": 894.1
+          },
+          {
+            "campaign_id": "23784984370",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 33,
+            "max_overspend_pct": 1664.4
+          },
+          {
+            "campaign_id": "23869101517",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 7,
+            "max_overspend_pct": 889.8
+          },
+          {
+            "campaign_id": "23885282770",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 10,
+            "max_overspend_pct": 350.3
+          },
+          {
+            "campaign_id": "23891066588",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 6,
+            "max_overspend_pct": 352.4
+          },
+          {
+            "campaign_id": "23904741515",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 1,
+            "max_overspend_pct": 79.6
+          }
+        ],
+        "conversions_exceed_clicks": [
+          {
+            "campaign_id": "18253980912",
+            "issue": "conversions_exceed_clicks",
+            "n_violating_rows": 1
+          },
+          {
+            "campaign_id": "20233159677",
+            "issue": "conversions_exceed_clicks",
+            "n_violating_rows": 1
+          },
+          {
+            "campaign_id": "21587818996",
+            "issue": "conversions_exceed_clicks",
+            "n_violating_rows": 1
+          },
+          {
+            "campaign_id": "21700991485",
+            "issue": "conversions_exceed_clicks",
+            "n_violating_rows": 1
+          },
+          {
+            "campaign_id": "21802413975",
+            "issue": "conversions_exceed_clicks",
+            "n_violating_rows": 1
+          },
+          {
+            "campaign_id": "21956274883",
+            "issue": "conversions_exceed_clicks",
+            "n_violating_rows": 2
+          }
+        ],
+        "negative_values": [],
+        "zero_revenue_with_spend": [
+          {
+            "campaign_id": "19902093803",
+            "campaign_name": "Display_Campaign_01",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 274.93
+          },
+          {
+            "campaign_id": "20437094522",
+            "campaign_name": "Video_Campaign_03",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 37.55
+          },
+          {
+            "campaign_id": "21175154769",
+            "campaign_name": "Display_Campaign_02",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 1.12
+          },
+          {
+            "campaign_id": "21316026385",
+            "campaign_name": "Pmax_Campaign_01",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 21.12
+          },
+          {
+            "campaign_id": "21906752380",
+            "campaign_name": "Video_Campaign_02",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 3057.67
+          },
+          {
+            "campaign_id": "23078147752",
+            "campaign_name": "Search_NTM_Campaign_06",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 2497.48
+          },
+          {
+            "campaign_id": "23261571739",
+            "campaign_name": "Pmax_Campaign_02",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 2.32
+          },
+          {
+            "campaign_id": "23655927759",
+            "campaign_name": "Search_NTM_Campaign_07",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 465.55
+          },
+          {
+            "campaign_id": "23887092849",
+            "campaign_name": "Search_NTM_Campaign_13",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 139.76
+          },
+          {
+            "campaign_id": "23887095087",
+            "campaign_name": "Search_NTM_Campaign_14",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 439.34
+          },
+          {
+            "campaign_id": "23887097487",
+            "campaign_name": "Search_NTM_Campaign_15",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 777.73
+          },
+          {
+            "campaign_id": "23887118808",
+            "campaign_name": "Search_NTM_Campaign_16",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 43.28
+          },
+          {
+            "campaign_id": "23892329165",
+            "campaign_name": "Search_NTM_Campaign_17",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 601.4
+          },
+          {
+            "campaign_id": "23904741515",
+            "campaign_name": "Shopping_NTM_Campaign_02",
+            "issue": "zero_revenue_with_spend",
+            "total_spend": 104.89
+          }
+        ]
+      }
+    },
+    "meta": {
+      "channel": "meta",
+      "n_campaigns": 16,
+      "n_rows": 3417,
+      "n_issues_flagged": 3,
+      "checks": {
+        "campaign_id_stability": [],
+        "date_coverage_gaps": [
+          {
+            "campaign_id": "120231960742960533",
+            "issue": "date_coverage_gap",
+            "max_gap_days": 23
+          }
+        ],
+        "budget_exceeded": [
+          {
+            "campaign_id": "120214631839140533",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 18,
+            "max_overspend_pct": 208.5
+          },
+          {
+            "campaign_id": "120214632085450533",
+            "issue": "spend_exceeds_daily_budget",
+            "n_violating_days": 19,
+            "max_overspend_pct": 207.4
+          }
+        ],
+        "conversions_exceed_clicks": [],
+        "negative_values": [],
+        "zero_revenue_with_spend": []
+      }
+    }
+  },
+  "summary": {
+    "total_campaigns": 136,
+    "total_issues_flagged": 147,
+    "by_check_type": {
+      "campaign_id_stability": 0,
+      "date_coverage_gaps": 19,
+      "budget_exceeded": 90,
+      "conversions_exceed_clicks": 6,
+      "negative_values": 0,
+      "zero_revenue_with_spend": 32
+    }
+  }
+}

@@ -7,10 +7,11 @@ Design: never ask the LLM to invent numbers. Pre-compute structured statistics
 (period-over-period deltas, spend elasticity per segment with bootstrap CIs,
 anomalous campaigns by ROAS z-score, budget-scenario deltas, per-segment
 walk-forward backtest reliability, a structural zero-revenue-campaign check,
-and confidence-gated budget-reallocation candidates with their priced
-impact -- see src/recommendations.py) and ask Claude to interpret them --
-including turning them into a ranked, caveated recommendation, not just a
-description of what already happened.
+confidence-gated budget-reallocation candidates with their priced impact --
+see src/recommendations.py -- and formal campaign-consistency validation
+findings -- see src/validate_consistency.py) and ask Claude to interpret
+them -- including turning them into a ranked, caveated recommendation, not
+just a description of what already happened.
 
 If ANTHROPIC_API_KEY is unset, falls back to a deterministic template built
 from the same stats dict, so the app runs fully offline. The template path
@@ -171,12 +172,29 @@ def _budget_scenario_deltas(baseline_df: pd.DataFrame, scenario_df: pd.DataFrame
     return out
 
 
+def _consistency_summary(validation_report: dict, top_n: int = 5) -> dict:
+    """Condense the full campaign-consistency validation report (see
+    src/validate_consistency.py) into something compact enough for the LLM
+    prompt and narrative -- summary counts plus a handful of examples per
+    check type, not the full per-campaign detail."""
+    out = {"summary": validation_report["summary"], "examples": {}}
+    for channel, c in validation_report["channels"].items():
+        for check_name, issues in c["checks"].items():
+            if not issues:
+                continue
+            out["examples"].setdefault(check_name, [])
+            for issue in issues[:top_n]:
+                out["examples"][check_name].append({"channel": channel, **issue})
+    return out
+
+
 def compute_stats(
     features: pd.DataFrame,
     model: dict,
     baseline_forecast: pd.DataFrame,
     scenario_forecast: Optional[pd.DataFrame] = None,
     include_recommendations: bool = True,
+    validation_report: Optional[dict] = None,
 ) -> dict:
     stats = {
         "period_deltas": _period_deltas(features),
@@ -185,6 +203,8 @@ def compute_stats(
         "forecast_reliability": _forecast_reliability(model),
         "structural_risk_campaigns": _structural_risk_campaigns(features),
     }
+    if validation_report is not None:
+        stats["consistency_validation"] = _consistency_summary(validation_report)
     if scenario_forecast is not None:
         stats["budget_scenario_deltas"] = _budget_scenario_deltas(baseline_forecast, scenario_forecast)
     if include_recommendations:
@@ -267,6 +287,20 @@ def _template_narrative(stats: dict) -> dict:
             f"trusting this channel's forecast."
         )
 
+    cv = stats.get("consistency_validation")
+    if cv:
+        s = cv["summary"]
+        lines.append(
+            f"Formal campaign-consistency validation flagged {s['total_issues_flagged']} issue(s) "
+            f"across {s['total_campaigns']} campaigns: {s['by_check_type'].get('zero_revenue_with_spend', 0)} "
+            f"zero-revenue-with-spend, {s['by_check_type'].get('budget_exceeded', 0)} daily-budget "
+            f"overspend, {s['by_check_type'].get('date_coverage_gaps', 0)} date-coverage gaps "
+            f">14 days, {s['by_check_type'].get('conversions_exceed_clicks', 0)} conversions-exceed-"
+            f"clicks anomalies. Budget overspend is common in real ad-platform data because a stated "
+            f"daily_budget is typically a pacing average a platform can exceed on any single day, "
+            f"not a hard cap -- flagged for visibility, not automatically treated as an error."
+        )
+
     recs = stats.get("budget_reallocation_recommendations", [])
     if recs:
         top = recs[0]
@@ -319,11 +353,14 @@ def _call_claude(stats: dict, api_key: str, model_name: str) -> dict:
         "walk-forward backtest reliability (mean_ape_pct and coverage_pct from held-out "
         "validation -- low_reliability=true means treat that segment's forecast with more "
         "caution), a structural check for channels with a high share of zero-lifetime-revenue "
-        "campaigns, confidence-gated budget-reallocation candidates with their priced revenue/"
-        "ROAS impact (budget_reallocation_recommendations -- every candidate here already "
-        "passed an elasticity-confidence screen, so all of them are trustworthy enough to "
-        "recommend; rank and caveat them, don't re-litigate their eligibility), and (if "
-        "present) a budget-scenario comparison.\n\n"
+        "campaigns, formal campaign-consistency validation findings (consistency_validation -- "
+        "budget overspend is normal in ad-platform data since daily_budget is usually a pacing "
+        "average, not a hard cap; weight the other check types more heavily), confidence-gated "
+        "budget-reallocation candidates with their priced revenue/ROAS impact "
+        "(budget_reallocation_recommendations -- every candidate here already passed an "
+        "elasticity-confidence screen, so all of them are trustworthy enough to recommend; rank "
+        "and caveat them, don't re-litigate their eligibility), and (if present) a budget-scenario "
+        "comparison.\n\n"
         "Do not invent or restate numbers beyond what's given. When forecast_reliability or "
         "structural_risk_campaigns entries are present, factor them explicitly into your "
         "narrative and risk flags -- these are honest reliability signals, not just "
@@ -369,9 +406,11 @@ def generate_causal_summary(
     api_key: Optional[str] = None,
     model_name: str = DEFAULT_MODEL,
     include_recommendations: bool = True,
+    validation_report: Optional[dict] = None,
 ) -> dict:
     stats = compute_stats(features, model, baseline_forecast, scenario_forecast,
-                           include_recommendations=include_recommendations)
+                           include_recommendations=include_recommendations,
+                           validation_report=validation_report)
     api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
 
     if api_key:

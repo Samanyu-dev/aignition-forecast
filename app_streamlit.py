@@ -29,6 +29,13 @@ st.divider()
 
 
 @st.cache_data(ttl=60)
+def call_validation_report():
+    resp = requests.get(f"{API_BASE_URL}/validation-report", timeout=30)
+    resp.raise_for_status()
+    return resp.json()
+
+
+@st.cache_data(ttl=60)
 def call_forecast(channel, campaign_type, horizons, budget_multipliers, include_narrative):
     resp = requests.post(
         f"{API_BASE_URL}/forecast",
@@ -222,3 +229,37 @@ structural_risk = scenario_data.get("stats", {}).get("structural_risk_campaigns"
 if structural_risk:
     st.markdown("**Structural risk** -- channels where a large share of campaigns spent money but generated zero lifetime revenue (a tracking/targeting problem, not routine variance):")
     st.dataframe(pd.DataFrame(structural_risk), width="stretch", hide_index=True)
+
+st.divider()
+st.subheader("⑦ Campaign consistency validation")
+st.caption(
+    "A dedicated, reusable validation step (src/validate_consistency.py) -- not inferred from "
+    "the AI narrative -- checking every campaign for: unstable campaign_id -> name/type mapping, "
+    "date-coverage gaps, spend exceeding daily_budget, conversions exceeding clicks, "
+    "negative/impossible values, and zero-revenue-with-spend."
+)
+try:
+    validation = call_validation_report()
+    vsum = validation["summary"]
+    vcols = st.columns(3)
+    vcols[0].metric("Campaigns checked", vsum["total_campaigns"])
+    vcols[1].metric("Total issues flagged", vsum["total_issues_flagged"])
+    vcols[2].metric("Zero-revenue-with-spend", vsum["by_check_type"].get("zero_revenue_with_spend", 0))
+    check_counts = pd.DataFrame([
+        {"Check": k.replace("_", " "), "Issues flagged": v}
+        for k, v in vsum["by_check_type"].items()
+    ]).sort_values("Issues flagged", ascending=False)
+    st.dataframe(check_counts, width="stretch", hide_index=True)
+    st.caption(
+        "Note: 'budget exceeded' is expected to be common in real ad-platform data -- a stated "
+        "daily_budget is typically a pacing average a platform can exceed on any single day, not "
+        "a hard cap. Flagged for visibility, not treated as an automatic error."
+    )
+    with st.expander("Per-channel detail"):
+        for channel, c in validation["channels"].items():
+            st.markdown(f"**{channel}**: {c['n_campaigns']} campaigns, {c['n_issues_flagged']} issues")
+            for check_name, issues in c["checks"].items():
+                if issues:
+                    st.dataframe(pd.DataFrame(issues), width="stretch", hide_index=True)
+except requests.exceptions.RequestException as e:
+    st.caption(f"Could not load validation report: {e}")
