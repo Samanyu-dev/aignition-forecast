@@ -121,6 +121,36 @@ trusting a noisy estimate — see `docs/TECHNICAL_DOC.md` §3.4). The ~27–28%
 revenue lift from a much larger spend increase is the diminishing-returns
 curve showing up correctly.
 
+### 3b. Beyond simulation: a specific, priced recommendation
+
+A forecast answers "what if"; `src/recommendations.py` answers "what should
+we do" — it searches the elasticity-confidence-gated segment pool for the
+best `shift $X/day from A to B` move and prices its impact with the same
+Monte Carlo machinery:
+
+```python
+from recommendations import generate_reallocation_candidates
+candidates = generate_reallocation_candidates(model)
+```
+
+**Actual output (top recommendation):**
+
+```
+Shift $17/day from meta/Generic_Brand (beta=0.21, CI=[0.06, 0.32])
+  to meta/Remarketing_DPA (beta=0.81, CI=[0.76, 0.85])
+Estimated 90-day revenue impact: +0.8% ($1,127,971 -> $1,136,536)
+Blended ROAS: 4.85x -> 4.88x
+Confidence: high
+```
+
+Both segments passed the same elasticity-confidence gate used for budget
+scenarios (§3.4) — nothing here is recommended off a noisy estimate. This
+directly targets the brief's "operational usefulness for agencies and
+marketers" criterion: not just a number, but a specific, defensible action
+an account manager could actually take, with the confidence level stated
+plainly. See `docs/TECHNICAL_DOC.md` §3.9 for the full methodology and five
+surfaced candidates.
+
 ---
 
 ## 4. AI-generated business insight
@@ -147,8 +177,15 @@ when a key is present, with this template as the always-available fallback):
 > has 18 of 28 spending campaigns (64.3%) with zero lifetime revenue,
 > representing $2,594 of spend with no measured return — a structural issue
 > (tracking, targeting, or a dead campaign left running), not routine
-> variance. Under the simulated budget scenario, 30-day revenue moves
-> +28.0% ($357,208 → $457,377)...
+> variance. **Recommended: shift ~$17/day from meta/Generic_Brand
+> (elasticity 0.21, CI [0.06, 0.32]) to meta/Remarketing_DPA (elasticity
+> 0.81, CI [0.76, 0.85]) — estimated 90-day revenue impact +0.8%
+> ($1,127,971 → $1,136,536), blended ROAS 4.85x → 4.88x. Confidence: high**
+> (both segments have a tight, backtested-eligible elasticity CI). Other
+> confidence-gated shifts worth considering: bing/Search→meta/Remarketing_DPA
+> (+0.6%); bing/PerformanceMax→meta/Remarketing_DPA (+0.5%);
+> meta/Generic_Brand→google/SEARCH (+0.3%). Under the simulated budget
+> scenario, 30-day revenue moves +28.0% ($357,208 → $457,377)...
 
 **Risk flags:**
 - 5 segment(s) have too few spend/revenue observations for a reliable
@@ -156,6 +193,11 @@ when a key is present, with this template as the always-available fallback):
 - 7 segment(s) failed to backtest reliably — see `docs/TECHNICAL_DOC.md` §3.8.
 - Bing: 64.3% of spending campaigns show zero lifetime revenue ($2,594
   wasted spend) — investigate before trusting this channel's forecast.
+
+Note the narrative doesn't just describe the recommendation from §3b — it's
+instructed to *make the case* for it (why this pair, why this confidence
+level), which is the difference between an LLM narrating a number and an
+LLM reasoning about what to do with it.
 
 Nothing in this narrative is invented — `compute_stats()` computes every
 number above from the actual data before either the LLM or the template
@@ -177,8 +219,12 @@ dataset, purely from the numbers.
    `docs/TECHNICAL_DOC.md` §3.7–3.8 for the honest 37.2%→57.8% calibration
    story).
 3. **Budget simulation** responds non-linearly and per-segment, using
-   confidence-gated elasticity rather than a single global multiplier.
+   confidence-gated elasticity rather than a single global multiplier —
+   and goes one step further into a **specific, priced recommendation**
+   (§3b), not just a what-if number.
 4. **AI insight** synthesizes all of the above — deltas, elasticity,
-   anomalies, backtest reliability, and a structural risk check — into an
-   operator-readable narrative with explicit risk flags, entirely from
-   pre-computed numbers the LLM cannot hallucinate around.
+   anomalies, backtest reliability, a structural risk check, and the
+   recommendation itself — into an operator-readable narrative that
+   *reasons about what to do*, not just what happened, with explicit risk
+   flags, entirely from pre-computed numbers the LLM cannot hallucinate
+   around.
