@@ -6,8 +6,11 @@ used only by the FastAPI/Streamlit demo layer.
 Design: never ask the LLM to invent numbers. Pre-compute structured statistics
 (period-over-period deltas, spend elasticity per segment with bootstrap CIs,
 anomalous campaigns by ROAS z-score, budget-scenario deltas, per-segment
-walk-forward backtest reliability, and a structural zero-revenue-campaign
-check) and ask Claude to interpret them.
+walk-forward backtest reliability, a structural zero-revenue-campaign check,
+and confidence-gated budget-reallocation candidates with their priced
+impact -- see src/recommendations.py) and ask Claude to interpret them --
+including turning them into a ranked, caveated recommendation, not just a
+description of what already happened.
 
 If ANTHROPIC_API_KEY is unset, falls back to a deterministic template built
 from the same stats dict, so the app runs fully offline. The template path
@@ -17,10 +20,14 @@ Messages API but was validated structurally, not against a live request --
 see docs/TECHNICAL_DOC.md limitations.
 """
 import os
+import sys
 from typing import Optional
 
 import numpy as np
 import pandas as pd
+
+sys.path.insert(0, os.path.dirname(__file__))
+from recommendations import generate_reallocation_candidates
 
 DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
 RECENT_WINDOW_DAYS = 30
@@ -169,6 +176,7 @@ def compute_stats(
     model: dict,
     baseline_forecast: pd.DataFrame,
     scenario_forecast: Optional[pd.DataFrame] = None,
+    include_recommendations: bool = True,
 ) -> dict:
     stats = {
         "period_deltas": _period_deltas(features),
@@ -179,6 +187,8 @@ def compute_stats(
     }
     if scenario_forecast is not None:
         stats["budget_scenario_deltas"] = _budget_scenario_deltas(baseline_forecast, scenario_forecast)
+    if include_recommendations:
+        stats["budget_reallocation_recommendations"] = generate_reallocation_candidates(model)
     return stats
 
 
@@ -257,6 +267,29 @@ def _template_narrative(stats: dict) -> dict:
             f"trusting this channel's forecast."
         )
 
+    recs = stats.get("budget_reallocation_recommendations", [])
+    if recs:
+        top = recs[0]
+        lines.append(
+            f"Recommended: shift ~${top['shift_daily_dollars']:.0f}/day from {top['from']} "
+            f"(elasticity {top['from_elasticity']}, CI {top['from_elasticity_ci']}) to {top['to']} "
+            f"(elasticity {top['to_elasticity']}, CI {top['to_elasticity_ci']}) -- estimated "
+            f"{top['horizon_days']}-day revenue impact {top['revenue_delta_pct']:+.1f}% "
+            f"(${top['baseline_p50_revenue']:,.0f} -> ${top['scenario_p50_revenue']:,.0f}), blended ROAS "
+            f"{top['baseline_p50_roas']:.2f}x -> {top['scenario_p50_roas']:.2f}x. Confidence: "
+            f"{top['confidence']} (both segments have a tight, backtested-eligible elasticity CI)."
+        )
+        if len(recs) > 1:
+            others = "; ".join(
+                f"{r['from']}->{r['to']} ({r['revenue_delta_pct']:+.1f}%)" for r in recs[1:4]
+            )
+            lines.append(f"Other confidence-gated shifts worth considering: {others}.")
+        lines.append(
+            "These are the only reallocations surfaced across the eligible segment pool -- every "
+            "candidate was screened by elasticity confidence before being priced, so segments with "
+            "too little data to trust are never recommended, only reported as unreliable (above)."
+        )
+
     if "budget_scenario_deltas" in stats:
         for bs in stats["budget_scenario_deltas"]:
             if bs["pct_change"] is None:
@@ -278,22 +311,32 @@ def _call_claude(stats: dict, api_key: str, model_name: str) -> dict:
 
     client = anthropic.Anthropic(api_key=api_key)
     prompt = (
-        "You are a marketing analytics assistant. Below is pre-computed JSON data about an "
-        "e-commerce advertiser's blended Google/Bing/Meta performance: period-over-period "
-        "revenue and spend deltas, per-segment spend elasticity with bootstrap confidence "
-        "intervals (used_for_budget_scenarios=false means the CI was too wide to trust for "
-        "budget scaling), anomalous campaigns by ROAS z-score, per-segment walk-forward "
-        "backtest reliability (mean_ape_pct and coverage_pct from held-out validation -- "
-        "low_reliability=true means treat that segment's forecast with more caution), a "
-        "structural check for channels with a high share of zero-lifetime-revenue campaigns, "
-        "and (if present) a budget-scenario comparison.\n\n"
+        "You are a marketing analytics assistant advising an e-commerce agency. Below is "
+        "pre-computed JSON data about their blended Google/Bing/Meta performance: "
+        "period-over-period revenue and spend deltas, per-segment spend elasticity with "
+        "bootstrap confidence intervals (used_for_budget_scenarios=false means the CI was too "
+        "wide to trust for budget scaling), anomalous campaigns by ROAS z-score, per-segment "
+        "walk-forward backtest reliability (mean_ape_pct and coverage_pct from held-out "
+        "validation -- low_reliability=true means treat that segment's forecast with more "
+        "caution), a structural check for channels with a high share of zero-lifetime-revenue "
+        "campaigns, confidence-gated budget-reallocation candidates with their priced revenue/"
+        "ROAS impact (budget_reallocation_recommendations -- every candidate here already "
+        "passed an elasticity-confidence screen, so all of them are trustworthy enough to "
+        "recommend; rank and caveat them, don't re-litigate their eligibility), and (if "
+        "present) a budget-scenario comparison.\n\n"
         "Do not invent or restate numbers beyond what's given. When forecast_reliability or "
         "structural_risk_campaigns entries are present, factor them explicitly into your "
         "narrative and risk flags -- these are honest reliability signals, not just "
         "performance metrics, and should shape how confidently you phrase recommendations. "
         "Write:\n"
         "1. A 3-5 sentence narrative summary of what's happening and why it matters operationally.\n"
-        "2. A short bulleted list of risk flags or operational recommendations.\n\n"
+        "2. If budget_reallocation_recommendations is non-empty, 1-2 sentences making the "
+        "single best recommendation concrete and actionable ('shift $X/day from A to B because "
+        "Y, expect roughly Z% revenue lift') -- this should read as advice, not just a "
+        "description of a number that exists.\n"
+        "3. A short bulleted list of risk flags or caveats (including anything that should "
+        "limit confidence in the recommendation above, e.g. its own segment's backtest "
+        "reliability).\n\n"
         f"DATA:\n{json.dumps(stats, indent=2)}"
     )
     response = client.messages.create(
@@ -302,14 +345,19 @@ def _call_claude(stats: dict, api_key: str, model_name: str) -> dict:
         messages=[{"role": "user", "content": prompt}],
     )
     text = next((b.text for b in response.content if b.type == "text"), "")
-    parts = text.split("\n\n", 1)
-    narrative = parts[0].strip()
-    risk_section = parts[1].strip() if len(parts) > 1 else ""
-    risk_flags = [
-        line.lstrip("-* ").strip()
-        for line in risk_section.splitlines()
-        if line.strip().startswith(("-", "*"))
-    ]
+    # Narrative now spans two numbered items (summary + concrete recommendation) before the
+    # bulleted risk list, so split on "first bulleted line" rather than "first blank line" --
+    # a fixed split point would silently swallow the recommendation sentence into nowhere.
+    narrative_lines, risk_flags = [], []
+    in_risk_section = False
+    for line in text.strip().splitlines():
+        stripped = line.strip()
+        if stripped.startswith(("-", "*")):
+            in_risk_section = True
+            risk_flags.append(stripped.lstrip("-* ").strip())
+        elif not in_risk_section and stripped:
+            narrative_lines.append(stripped)
+    narrative = " ".join(narrative_lines)
     return {"text": narrative, "risk_flags": risk_flags}
 
 
@@ -320,8 +368,10 @@ def generate_causal_summary(
     scenario_forecast: Optional[pd.DataFrame] = None,
     api_key: Optional[str] = None,
     model_name: str = DEFAULT_MODEL,
+    include_recommendations: bool = True,
 ) -> dict:
-    stats = compute_stats(features, model, baseline_forecast, scenario_forecast)
+    stats = compute_stats(features, model, baseline_forecast, scenario_forecast,
+                           include_recommendations=include_recommendations)
     api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
 
     if api_key:

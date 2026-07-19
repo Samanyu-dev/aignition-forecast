@@ -443,12 +443,22 @@ avoid hallucinated figures:
   would catch an equivalent failure on Google or Meta in different data.
 - Budget-scenario deltas (baseline vs. simulated blended revenue per
   horizon), when a scenario is active.
+- **Confidence-gated budget-reallocation candidates** (`budget_reallocation_recommendations`,
+  §3.9), already priced with Monte Carlo revenue/ROAS impact and already
+  screened by elasticity confidence before they ever reach the LLM. This is
+  the deliberate design point that pushes the AI layer from *narrating* to
+  *reasoning*: the LLM is explicitly instructed to turn the top candidate
+  into a concrete, actionable recommendation ("shift $X/day from A to B
+  because Y, expect roughly Z% lift") rather than only describing what
+  already happened — while still being told the eligibility screening is
+  already done, so it caveats confidence rather than re-deriving it.
 
 `src/llm_summary.py`'s `compute_stats()` produces this structured JSON;
 `generate_causal_summary()` either sends it to Claude for a narrative +
-risk-flag list, or — if `ANTHROPIC_API_KEY` is unset, or the API call fails
-for any reason — falls back to a deterministic template built from the
-same stats dict, extended to cover every new stat category so the offline
-path stays just as informative as the live-LLM path. The app therefore
-always runs, fully offline if needed, with the LLM as a strict enhancement
-layer rather than a dependency.
+recommendation + risk-flag list, or — if `ANTHROPIC_API_KEY` is unset, or
+the API call fails for any reason — falls back to a deterministic template
+built from the same stats dict, extended to cover every new stat category
+(including the recommendation) so the offline path stays just as
+informative as the live-LLM path. The app therefore always runs, fully
+offline if needed, with the LLM as a strict enhancement layer rather than a
+dependency.
