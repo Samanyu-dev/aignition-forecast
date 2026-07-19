@@ -83,10 +83,12 @@ aignition-forecast/
 - `output/predictions.csv` columns:
   `channel,campaign_type,campaign_id,horizon_days,metric,p10,p50,p90`
   (`metric` ∈ `{revenue, roas}`; blank `campaign_type`/`campaign_id` mark
-  channel/blended rollups). **This schema was not published in the materials
-  available at build time — verify against the official launch schema before
-  the real submission and adjust `src/forecasting.py`'s output columns if
-  needed.**
+  channel/blended rollups). Confirmed against the actual AIgnition brief: the
+  "Date Link — AIgnition_dataset" resource is the same three CSVs already in
+  `data/`, not a separate output-schema spec — the brief specifies required
+  outputs qualitatively (channel/campaign_type/campaign-level revenue + ROAS
+  ranges, probabilistic not deterministic) and this schema satisfies that. No
+  external format to mismatch against.
 - Random seed is fixed (`seed=42` in `src/forecasting.py`, `src/train.py`)
   everywhere Monte Carlo sampling occurs.
 

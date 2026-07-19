@@ -314,12 +314,27 @@ intervals, given the brief explicitly asks for probabilistic ranges.
    per-year holiday calendar (e.g. distinguishing Diwali, Christmas week,
    New Year specifically) is modeled, given the aggregate 30/60/90-day
    forecast horizon specified by the brief.
-5. `output/predictions.csv`'s column schema (§below) is our own proposal —
-   the exact schema announced at the AIgnition launch was not available in
-   the materials provided at build time. **This must be verified against the
-   official schema before final submission.**
+5. `output/predictions.csv`'s column schema
+   (`channel,campaign_type,campaign_id,horizon_days,metric,p10,p50,p90`) is
+   a considered design decision, not a guess against an unseen spec: the
+   brief's "Date Link — AIgnition_dataset" resource is the same three CSVs
+   already in `data/`, not a separate output-format document, and the brief
+   itself specifies required outputs only qualitatively (channel- /
+   campaign_type- / campaign-level revenue and ROAS ranges, probabilistic
+   not deterministic) — which this schema satisfies directly.
 
 ## 5. Limitations
+
+- **GA4 session source/medium data and Shopify conversion data are listed
+  as brief resources but do not exist in the actual dataset** — only the
+  three ad-platform CSVs (Bing/Google/Meta) were provided. This is a real
+  constraint, not an oversight: without an independent revenue source (a
+  Shopify order feed, e.g.), there is no ground truth to directly verify
+  Meta's revenue figures against. The §2.2 finding that `meta.conversion` is
+  mislabeled revenue had to be established by statistical inference
+  (matching its implied ROAS distribution against Bing/Google's measured
+  ROAS) rather than a direct cross-check — a reasonable substitute given the
+  constraint, but a substitute nonetheless.
 
 - No cross-segment/cross-channel correlation in the Monte Carlo aggregation
   (assumption 2 above) — blended intervals are likely somewhat too narrow.
