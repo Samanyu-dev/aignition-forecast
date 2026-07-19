@@ -295,6 +295,46 @@ alone is deliberate — a forecast that's calibrated but has a slightly worse
 median is more useful than one with a sharper median and badly wrong
 intervals, given the brief explicitly asks for probabilistic ranges.
 
+### 3.9 Budget-reallocation recommendations
+
+A forecast alone isn't a decision — `src/recommendations.py` turns the
+elasticity work above into an actual "shift $X/day from segment A to segment
+B" recommendation, priced with the same Monte Carlo machinery as the budget
+scenarios above (`forecasting.py` now also accepts a **segment-level**
+budget override, not just a per-channel one, so a scenario can move spend
+between two specific segments precisely).
+
+**Eligibility is confidence-gated, not just elasticity-ranked**: only
+segments with `elasticity_low_confidence=False` (tight bootstrap CI, §3.4)
+and non-trivial spend qualify as either a donor (reduce) or a receiver
+(increase) — 12 of 17 campaign_type segments qualified on this dataset. The
+donor pool is the 3 lowest-elasticity eligible segments (most diminishing
+returns); the receiver pool is the 3 highest-elasticity eligible segments
+(most linear/efficient). Each donor×receiver pair is priced by simulating a
+20%-of-daily-spend shift (receiver-side multiplier capped at 2.5x to avoid
+extrapolating the elasticity fit past where it was estimated) and comparing
+blended 90-day P50 revenue/ROAS against the unshifted baseline. Top 5 by
+revenue delta are surfaced, re-priced at full Monte Carlo precision
+(2,000 sims) rather than the cheaper search-time estimate (500 sims) used to
+rank the full candidate set.
+
+**Actual top recommendation on this dataset:**
+
+| From | To | Shift ($/day) | From β (CI) | To β (CI) | 90d revenue Δ |
+|---|---|---|---|---|---|
+| meta/Generic_Brand | meta/Remarketing_DPA | $16.95 | 0.21 [0.06,0.32] | 0.81 [0.76,0.85] | +$8,564 (+0.8%) |
+| bing/Search | meta/Remarketing_DPA | $14.06 | 0.11 [0.02,0.20] | 0.81 [0.76,0.85] | +$6,929 (+0.6%) |
+| bing/PerformanceMax | meta/Remarketing_DPA | $10.54 | 0.13 [0.00,0.36] | 0.81 [0.76,0.85] | +$5,425 (+0.5%) |
+
+Read the small dollar sizes honestly: the segments with genuinely tight
+elasticity CIs skew toward Bing and smaller Meta campaign types, which have
+small absolute daily spend (§2 — Bing's average daily spend here is under
+$100), so the *dollar* shifts are modest even though the *directional*
+signal (move spend toward higher, tightly-estimated elasticity) is real and
+statistically defensible. This is a deliberate byproduct of the confidence
+gate, not a limitation of the method — a bigger, noisier recommendation
+would be easy to produce by ignoring the CI width, and would be worse advice.
+
 ## 4. Assumptions
 
 1. Meta's `conversion` field is conversion value, not count (§2.2).

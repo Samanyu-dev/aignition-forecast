@@ -2,7 +2,10 @@
 Shared forecasting core: turns a trained model dict (see src/train.py) into
 probabilistic (P10/P50/P90) revenue & ROAS forecasts over 30/60/90-day
 horizons, at campaign_type / channel / blended rollup levels, with optional
-per-channel budget scenario overrides.
+per-channel OR per-(channel, campaign_type)-segment budget scenario
+overrides (the latter is what src/recommendations.py uses to price a
+"shift $X from segment A to segment B" reallocation precisely, rather than
+only being able to scale an entire channel at once).
 
 Used by both src/predict.py (the run.sh critical path — always multiplier=1.0,
 i.e. "continue current run-rate") and src/api.py (the interactive demo layer,
@@ -70,10 +73,17 @@ def forecast(
     model: dict,
     horizons=HORIZONS,
     budget_multipliers: Optional[dict] = None,
+    segment_budget_multipliers: Optional[dict] = None,
     n_sims: int = DEFAULT_N_SIMS,
     seed: int = SEED,
 ) -> pd.DataFrame:
+    """budget_multipliers: {channel: multiplier}, applied to every segment in
+    that channel. segment_budget_multipliers: {(channel, campaign_type):
+    multiplier}, overrides budget_multipliers for that specific segment only
+    -- lets a scenario move spend between segments within the same channel,
+    not just scale a whole channel uniformly."""
     budget_multipliers = budget_multipliers or {}
+    segment_budget_multipliers = segment_budget_multipliers or {}
     rng = np.random.default_rng(seed)
     segments = model["segments"]
 
@@ -82,7 +92,9 @@ def forecast(
     blended_sims = {}  # horizon -> list of (revenue_sim_array, spend_total)
 
     for (channel, campaign_type), seg in segments.items():
-        mult = float(budget_multipliers.get(channel, 1.0))
+        mult = float(segment_budget_multipliers.get(
+            (channel, campaign_type), budget_multipliers.get(channel, 1.0)
+        ))
         elasticity = seg.get("elasticity_beta_for_scenario", seg["elasticity_beta"])
         scenario_scale = mult ** elasticity if mult > 0 else 0.0
 
@@ -111,7 +123,9 @@ def forecast(
     # underlying data already counted at the campaign_type level above -- they
     # are NOT folded into channel_sims/blended_sims (that would double-count).
     for (channel, campaign_type, campaign_id), seg in model.get("campaign_segments", {}).items():
-        mult = float(budget_multipliers.get(channel, 1.0))
+        mult = float(segment_budget_multipliers.get(
+            (channel, campaign_type), budget_multipliers.get(channel, 1.0)
+        ))
         elasticity = seg.get("elasticity_beta_for_scenario", seg["elasticity_beta"])
         scenario_scale = mult ** elasticity if mult > 0 else 0.0
 
