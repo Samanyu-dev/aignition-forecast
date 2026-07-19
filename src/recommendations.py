@@ -40,8 +40,12 @@ def _eligible_segments(model: dict) -> list:
     return eligible
 
 
-def _price_candidate(model, donor: tuple, receiver: tuple, shift_fraction: float,
-                      horizon: int, n_sims: int, seed: int) -> dict:
+def compute_segment_multipliers(donor: tuple, receiver: tuple, shift_fraction: float) -> tuple:
+    """Shared math for pricing a donor->receiver shift: returns
+    (segment_budget_multipliers dict, shift_dollars). Exposed separately from
+    _price_candidate so callers (e.g. src/api.py's recommendation-forecast
+    endpoint) can get the same multipliers used for pricing without
+    re-deriving the formula."""
     d_channel, d_type, d_seg = donor
     r_channel, r_type, r_seg = receiver
 
@@ -53,7 +57,15 @@ def _price_candidate(model, donor: tuple, receiver: tuple, shift_fraction: float
     )
     receiver_mult = min(receiver_mult, MAX_RECEIVER_MULTIPLIER)
 
-    seg_mults = {(d_channel, d_type): donor_mult, (r_channel, r_type): receiver_mult}
+    return {(d_channel, d_type): donor_mult, (r_channel, r_type): receiver_mult}, shift_dollars
+
+
+def _price_candidate(model, donor: tuple, receiver: tuple, shift_fraction: float,
+                      horizon: int, n_sims: int, seed: int) -> dict:
+    d_channel, d_type, d_seg = donor
+    r_channel, r_type, r_seg = receiver
+
+    seg_mults, shift_dollars = compute_segment_multipliers(donor, receiver, shift_fraction)
     baseline = forecast(model, horizons=[horizon], n_sims=n_sims, seed=seed)
     scenario = forecast(model, horizons=[horizon], segment_budget_multipliers=seg_mults,
                          n_sims=n_sims, seed=seed)

@@ -36,6 +36,13 @@ def call_validation_report():
 
 
 @st.cache_data(ttl=60)
+def call_top_recommendation_forecast():
+    resp = requests.get(f"{API_BASE_URL}/top-recommendation-forecast", timeout=30)
+    resp.raise_for_status()
+    return resp.json()
+
+
+@st.cache_data(ttl=60)
 def call_forecast(channel, campaign_type, horizons, budget_multipliers, include_narrative):
     resp = requests.post(
         f"{API_BASE_URL}/forecast",
@@ -142,6 +149,31 @@ if recommendations:
         "revenue_delta_pct": "Revenue Δ (%)", "scenario_p50_roas": "Scenario ROAS", "confidence": "Confidence",
     })
     st.dataframe(rec_df, width="stretch", hide_index=True)
+
+    st.markdown("**Current run-rate vs. top recommendation applied, side by side:**")
+    try:
+        rec_fc = call_top_recommendation_forecast()
+        if rec_fc.get("available"):
+            base_df = pd.DataFrame(rec_fc["baseline_forecast"])
+            reco_df = pd.DataFrame(rec_fc["recommended_forecast"])
+            base_df["allocation"] = "Current run-rate"
+            reco_df["allocation"] = "With top recommendation"
+            comp = pd.concat([base_df, reco_df], ignore_index=True)
+            comp_rev = comp[comp.metric == "revenue"]
+
+            comp_band = alt.Chart(comp_rev).mark_area(opacity=0.25).encode(
+                x=alt.X("horizon_days:O", title="Horizon (days)"),
+                y=alt.Y("p10:Q", title="Revenue ($)"), y2="p90:Q",
+                color=alt.Color("allocation:N", legend=alt.Legend(title=None)),
+            )
+            comp_line = alt.Chart(comp_rev).mark_line(point=True).encode(
+                x="horizon_days:O", y="p50:Q", color="allocation:N",
+            )
+            st.altair_chart((comp_band + comp_line).properties(height=300), use_container_width=True)
+        else:
+            st.caption("No top recommendation available to compare.")
+    except requests.exceptions.RequestException as e:
+        st.caption(f"Could not load recommendation comparison: {e}")
 else:
     st.caption("No confidence-gated reallocation candidates available for this dataset/scenario.")
 

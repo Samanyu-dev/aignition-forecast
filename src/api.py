@@ -19,6 +19,7 @@ from forecasting import forecast, HORIZONS
 from generate_features import _find_file, load_bing, load_google, load_meta, infer_funnel_stage
 from llm_summary import generate_causal_summary
 from validate_consistency import run_validation
+from recommendations import generate_reallocation_candidates, compute_segment_multipliers, SHIFT_FRACTION
 
 DATA_DIR = os.environ.get("DATA_DIR", "./data")
 MODEL_PATH = os.environ.get("MODEL_PATH", "./pickle/model.pkl")
@@ -96,3 +97,35 @@ def get_forecast(req: ForecastRequest):
 @app.get("/validation-report")
 def get_validation_report():
     return _validation_report
+
+
+@app.get("/top-recommendation-forecast")
+def get_top_recommendation_forecast():
+    """Baseline (current run-rate) vs. the top confidence-gated budget
+    recommendation applied, at all 3 horizons -- for the Streamlit side-by-
+    side scenario comparison view. Reuses recommendations.py's exact pricing
+    formula rather than re-deriving it, so this always matches the number
+    the 'Recommended budget shifts' table shows."""
+    top = generate_reallocation_candidates(_model, top_n=1)
+    if not top:
+        return {"available": False}
+    rec = top[0]
+
+    d_channel, d_type = rec["from"].split("/", 1)
+    r_channel, r_type = rec["to"].split("/", 1)
+    donor = (d_channel, d_type, _model["segments"][(d_channel, d_type)])
+    receiver = (r_channel, r_type, _model["segments"][(r_channel, r_type)])
+    seg_mults, _ = compute_segment_multipliers(donor, receiver, SHIFT_FRACTION)
+
+    baseline = forecast(_model, horizons=list(HORIZONS))
+    recommended = forecast(_model, horizons=list(HORIZONS), segment_budget_multipliers=seg_mults)
+
+    baseline_df = baseline[(baseline.channel == "blended")]
+    recommended_df = recommended[(recommended.channel == "blended")]
+
+    return {
+        "available": True,
+        "recommendation": rec,
+        "baseline_forecast": baseline_df.to_dict(orient="records"),
+        "recommended_forecast": recommended_df.to_dict(orient="records"),
+    }
