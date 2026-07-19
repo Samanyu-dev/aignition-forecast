@@ -91,11 +91,30 @@ for col, h in zip(cols, sorted(horizons)):
 st.subheader("Channel / campaign-type contribution")
 segment_data = call_forecast(None, None, horizons, multipliers, False)
 seg_df = pd.DataFrame(segment_data["forecast"])
-seg_rev = seg_df[(seg_df.metric == "revenue") & (seg_df.channel != "blended")]
+# campaign_id == "" marks a channel/campaign_type rollup row -- individual
+# campaign rows (added for campaign-level forecasting) share the same
+# (channel, campaign_type) index and must be excluded here, or pivot_table's
+# aggfunc="first" would silently grab an arbitrary campaign instead of the
+# true campaign_type total.
+seg_rev = seg_df[(seg_df.metric == "revenue") & (seg_df.channel != "blended") & (seg_df.campaign_id == "")]
 pivot = seg_rev.pivot_table(
     index=["channel", "campaign_type"], columns="horizon_days", values="p50", aggfunc="first"
 ).round(0)
 st.dataframe(pivot, width="stretch")
+
+with st.expander("Top campaign-level forecasts (P50 revenue)"):
+    camp_rev = seg_df[(seg_df.metric == "revenue") & (seg_df.campaign_id != "")]
+    if not camp_rev.empty:
+        h = max(horizons)
+        top_campaigns = (
+            camp_rev[camp_rev.horizon_days == h]
+            .sort_values("p50", ascending=False)
+            .head(15)[["channel", "campaign_type", "campaign_id", "p50"]]
+            .rename(columns={"p50": f"{h}d_revenue_p50"})
+        )
+        st.dataframe(top_campaigns, width="stretch", hide_index=True)
+    else:
+        st.caption("No campaign-level forecasts available (all campaigns had <30 days of history).")
 
 st.subheader("AI-assisted causal narrative")
 source_badge = {"llm": "🟢 Claude API", "template": "⚪ offline template (no ANTHROPIC_API_KEY)",
@@ -107,3 +126,36 @@ if risk_flags:
     st.markdown("**Risk flags:**")
     for flag in risk_flags:
         st.markdown(f"- {flag}")
+
+st.subheader("Model reliability (walk-forward backtest)")
+st.caption(
+    "Each segment's model was walk-forward validated (3 held-out 30-day windows, refit on "
+    "data before each cutoff). Method-selection + calibration fixes improved aggregate P10-P90 "
+    "coverage from 37.2% to 57.8% and cut mean pinball loss ~15% -- see docs/TECHNICAL_DOC.md "
+    "sec 3.7-3.8 for the full before/after. Still short of the 80% nominal target; segments "
+    "flagged below should be read with extra caution."
+)
+reliability = scenario_data.get("stats", {}).get("forecast_reliability", [])
+if reliability:
+    rel_df = pd.DataFrame(reliability).sort_values("coverage_pct")
+    st.dataframe(
+        rel_df.rename(columns={
+            "segment": "Segment", "method": "Method", "mean_ape_pct": "Backtest MAPE (%)",
+            "coverage_pct": "P10-P90 Coverage (%)", "low_reliability": "Low reliability",
+        }),
+        width="stretch", hide_index=True,
+    )
+    chart = alt.Chart(rel_df).mark_circle(size=120).encode(
+        x=alt.X("mean_ape_pct:Q", title="Backtest MAPE (%)", scale=alt.Scale(type="symlog")),
+        y=alt.Y("coverage_pct:Q", title="P10-P90 Coverage (%)"),
+        color=alt.Color("method:N", title="Method"),
+        tooltip=["segment", "method", "mean_ape_pct", "coverage_pct"],
+    ).properties(height=300)
+    st.altair_chart(chart, use_container_width=True)
+else:
+    st.caption("No backtest reliability data available.")
+
+structural_risk = scenario_data.get("stats", {}).get("structural_risk_campaigns", [])
+if structural_risk:
+    st.markdown("**Structural risk (channels with a high share of zero-revenue campaigns):**")
+    st.dataframe(pd.DataFrame(structural_risk), width="stretch", hide_index=True)

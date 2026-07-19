@@ -83,5 +83,6 @@ def get_forecast(req: ForecastRequest):
         response["narrative"] = summary["narrative"]
         response["risk_flags"] = summary["risk_flags"]
         response["narrative_source"] = summary["source"]
+        response["stats"] = summary["stats"]
 
     return response
